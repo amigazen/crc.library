@@ -1,0 +1,71 @@
+#
+# :ts=8
+#
+###############################################################################
+
+NAME = crc.library
+
+###############################################################################
+
+OPTIMIZE = optimize opttime
+DEBUG = symbolflush noopt
+
+###############################################################################
+
+CFLAGS = resopt idlen=64 comnest streq strmerge nostkchk \
+	includedir=include includedir=/SDK/Include_h includedir=include: $(OPTIMIZE) debug=$(DEBUG) \
+	params=register strsect=code mccons smallcode smalldata \
+	unsignedchars nomultipleincludes structureequivalence \
+	optimizescheduler noversion noicons memorysize=huge \
+	stringsconst nostartup
+LFLAGS = addsym smallcode smalldata noicons batch stripdebug
+
+###############################################################################
+
+OBJS = \
+	StartUp.o \
+	LibInit.o \
+	crc_lvos.o \
+	crc_engine.o \
+	crc_libc.o
+
+###############################################################################
+
+all: $(NAME) unittests
+
+$(NAME): $(OBJS)
+	Sc $(LFLAGS) NOSTARTUP LINK TO $@ $(OBJS)
+
+install: $(NAME)
+	copy $(NAME) LIBS:
+
+clean:
+	delete $(NAME) $(NAME).debug $(NAME).map $(OBJS) all
+	cd unittests && smake clean
+
+version:
+	bumprev $(VERSION) $(NAME)
+
+###############################################################################
+
+LibInit.o: LibInit.c private/crc_build.h Rev.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+StartUp.o: StartUp.c private/crc_build.h crc_funcs.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+crc_lvos.o: crc_lvos.c crc_funcs.h private/crc_internal.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+crc_engine.o: crc_engine.c private/crc_internal.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+crc_libc.o: crc_libc.c private/crc_internal.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+###############################################################################
+
+unittests:
+	cd unittests && smake all
+
+.PHONY: unittests install clean version

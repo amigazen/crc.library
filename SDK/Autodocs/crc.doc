@@ -1,0 +1,816 @@
+TABLE OF CONTENTS
+
+crc.library/DoCRC32_1
+crc.library/DoCRC32_2
+crc.library/DoCRC32_3
+crc.library/DoCRC32_4
+crc.library/DoCRC32_5
+crc.library/DoCRC32_6
+crc.library/DoCRC16_1
+crc.library/DoCRC16_2
+crc.library/DoCRC16_3
+crc.library/DoCRC16_4
+crc.library/DoCHS32_1M
+crc.library/DoCHS32_1I
+crc.library/DoCHS32_2
+crc.library/DoCHS16_1
+crc.library/DoEORB
+crc.library/DoEORWM
+crc.library/DoEORWI
+crc.library/DoEORLM
+crc.library/DoEORLI
+crc.library/DoSumSB
+crc.library/DoSumSWM
+crc.library/DoSumSWI
+crc.library/DoSumUB
+crc.library/DoSumUWM
+crc.library/DoSumUWI
+crc.library/DoSumLM
+crc.library/DoSumLI
+crc.library/md5sum
+crc.library/DoCRC32_1                                                 crc.library/DoCRC32_1
+
+   NAME
+	DoCRC32_1 -- compute a 32-bit CRC over a memory block.
+
+   SYNOPSIS
+	crc = DoCRC32_1( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_1( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit cyclic redundancy check using the reflected polynomial
+	0xEDB88320 with an initial value of zero and no final inversion. This
+	variant matches checksums used by PCompress, Olaf Barthel's CRC, Zoom 5,
+	and LhPak.
+
+	The entire block addressed by 'Mem' of byte length 'Size' is processed in
+	one call. The library does not retain state between calls.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    WARNING
+	'Mem' must remain valid for the duration of the call. For 'Size' greater
+	than zero, 'Mem' must not be NULL.
+
+    SEE ALSO
+	DoCRC32_2(), DoCRC32_3(), DoCRC32_4(), DoCRC32_5(), DoCRC32_6()
+
+crc.library/DoCRC32_2                                                 crc.library/DoCRC32_2
+
+   NAME
+	DoCRC32_2 -- compute a Zip/GZip style 32-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC32_2( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_2( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit CRC using the reflected polynomial 0xEDB88320 with an
+	initial value of 0xFFFFFFFF and a one's-complement of the result before
+	return. This matches Zip, GZip, LZX, RAR, and Arj archive checksums.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    WARNING
+	'Mem' must remain valid for the duration of the call. For 'Size' greater
+	than zero, 'Mem' must not be NULL.
+
+    SEE ALSO
+	DoCRC32_1(), DoCRC32_3(), DoCRC32_5()
+
+crc.library/DoCRC32_3                                                 crc.library/DoCRC32_3
+
+   NAME
+	DoCRC32_3 -- compute a Brik/Ace style 32-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC32_3( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_3( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit CRC using the same reflected table as DoCRC32_2()
+	(0xEDB88320) with an initial value of 0xFFFFFFFF but without the final
+	inversion. Used by Brik in binary mode and by Ace archives.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    SEE ALSO
+	DoCRC32_1(), DoCRC32_2()
+
+crc.library/DoCRC32_4                                                 crc.library/DoCRC32_4
+
+   NAME
+	DoCRC32_4 -- compute a GPatch style 32-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC32_4( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_4( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit CRC using a bit-serial algorithm with generator
+	0x04C11DB7. This is the legacy GPatch variant and is slower than the
+	table-driven DoCRC32_* routines but is retained for compatibility with
+	existing GPatch data.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    SEE ALSO
+	DoCRC32_5(), DoCRC32_6()
+
+crc.library/DoCRC32_5                                                 crc.library/DoCRC32_5
+
+   NAME
+	DoCRC32_5 -- compute a BZip2 style 32-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC32_5( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_5( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit CRC using the reflected polynomial 0x04C11DB7 with an
+	initial value of 0xFFFFFFFF and a one's-complement of the result
+	before return. This matches the CRC used by BZip2.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    SEE ALSO
+	DoCRC32_6(), DoCRC32_4()
+
+crc.library/DoCRC32_6                                                 crc.library/DoCRC32_6
+
+   NAME
+	DoCRC32_6 -- compute an inverted BZip2 style 32-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC32_6( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCRC32_6( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 32-bit CRC using the same reflected table and initial value
+	as DoCRC32_5() but without the final inversion. This is the BZip2
+	"inverted" CRC variant.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 32-bit CRC value
+
+    SEE ALSO
+	DoCRC32_5()
+
+crc.library/DoCRC16_1                                                 crc.library/DoCRC16_1
+
+   NAME
+	DoCRC16_1 -- compute a 16-bit CRC (PCompress2/Arc/DMS style).
+
+   SYNOPSIS
+	crc = DoCRC16_1( Mem, Size );
+	  d0               a0   d0
+
+	UWORD DoCRC16_1( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 16-bit CRC using the reflected polynomial 0xA001 with an
+	initial value of zero. Matches checksums used by PCompress2, Arc, DMS,
+	ProPack, LhA, Zoo, and Shrink.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 16-bit CRC value in the low word of the return register
+
+    SEE ALSO
+	DoCRC16_2(), DoCRC16_3(), DoCRC16_4()
+
+crc.library/DoCRC16_2                                                 crc.library/DoCRC16_2
+
+   NAME
+	DoCRC16_2 -- compute a CCITT/XModem style 16-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC16_2( Mem, Size );
+	  d0               a0   d0
+
+	UWORD DoCRC16_2( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 16-bit CRC using the polynomial 0x1021 in MSB-first table
+	form with an initial value of zero. Matches CCITT, XModem, and LU
+	checksums.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 16-bit CRC value in the low word of the return register
+
+    SEE ALSO
+	DoCRC16_1(), DoCRC16_4()
+
+crc.library/DoCRC16_3                                                 crc.library/DoCRC16_3
+
+   NAME
+	DoCRC16_3 -- compute Donald Kindred's 16-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC16_3( Mem, Size );
+	  d0               a0   d0
+
+	UWORD DoCRC16_3( UBYTE *, LONG );
+
+   FUNCTION
+	Computes Donald Kindred's proprietary 16-bit CRC algorithm over the
+	supplied memory block.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 16-bit CRC value in the low word of the return register
+
+    SEE ALSO
+	DoCRC16_1(), DoCRC16_2()
+
+crc.library/DoCRC16_4                                                 crc.library/DoCRC16_4
+
+   NAME
+	DoCRC16_4 -- compute old Zoom/CompDisk 16-bit CRC.
+
+   SYNOPSIS
+	crc = DoCRC16_4( Mem, Size );
+	  d0               a0   d0
+
+	UWORD DoCRC16_4( UBYTE *, LONG );
+
+   FUNCTION
+	Computes a 16-bit CRC using the 0x1021 polynomial in a variant matching
+	old Zoom and CompDisk archives.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	crc - 16-bit CRC value in the low word of the return register
+
+    SEE ALSO
+	DoCRC16_2()
+
+crc.library/DoCHS32_1M                                               crc.library/DoCHS32_1M
+
+   NAME
+	DoCHS32_1M -- compute a 32-bit WRAP checksum (Motorola byte order).
+
+   SYNOPSIS
+	sum = DoCHS32_1M( Mem, Size );
+	  d0                a0   d0
+
+	ULONG DoCHS32_1M( UBYTE *, LONG );
+
+   FUNCTION
+	Computes Olaf Barthel's 32-bit WRAP checksum over 32-bit big-endian
+	(Motorola) longwords. A carry that wraps past 0xFFFFFFFF increments the
+	result by one. The final value is one's-complemented before return.
+	Used by FFS boot blocks and related formats.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block; only complete 32-bit words are summed
+	    (Size is divided by four internally)
+
+    RESULT
+	sum - 32-bit checksum
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored. Only
+	the longword-aligned portion of the buffer participates in the sum.
+
+    SEE ALSO
+	DoCHS32_1I(), DoCHS32_2()
+
+crc.library/DoCHS32_1I                                               crc.library/DoCHS32_1I
+
+   NAME
+	DoCHS32_1I -- compute a 32-bit WRAP checksum (Intel byte order).
+
+   SYNOPSIS
+	sum = DoCHS32_1I( Mem, Size );
+	  d0                a0   d0
+
+	ULONG DoCHS32_1I( UBYTE *, LONG );
+
+   FUNCTION
+	Same WRAP checksum algorithm as DoCHS32_1M() but with 32-bit values
+	assembled in little-endian (Intel) byte order before accumulation.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block; only complete 32-bit words are summed
+	    (Size is divided by four internally)
+
+    RESULT
+	sum - 32-bit checksum
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored.
+
+    SEE ALSO
+	DoCHS32_1M(), DoCHS32_2()
+
+crc.library/DoCHS32_2                                                 crc.library/DoCHS32_2
+
+   NAME
+	DoCHS32_2 -- compute a LightFileSystem 32-bit checksum.
+
+   SYNOPSIS
+	sum = DoCHS32_2( Mem, Size );
+	  d0               a0   d0
+
+	ULONG DoCHS32_2( UBYTE *, LONG );
+
+   FUNCTION
+	Computes the LightFileSystem checksum. Data is processed in blocks of up
+	to 0x1600 bytes. Within each block bytes are summed and the running sum
+	is left-rotated once per byte before the block total is added to the
+	overall result.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	sum - 32-bit checksum
+
+    BUGS
+	When a sub-block length is a multiple of eight the per-byte rotate count
+	(i & 7) can be zero, producing an undefined 32-bit shift on 680x0 CPUs.
+	Avoid buffer lengths that are multiples of eight if you require
+	deterministic cross-platform behaviour.
+
+    SEE ALSO
+	DoCHS32_1M(), DoCHS32_1I()
+
+crc.library/DoCHS16_1                                                 crc.library/DoCHS16_1
+
+   NAME
+	DoCHS16_1 -- compute a PowerPacker password checksum.
+
+   SYNOPSIS
+	sum = DoCHS16_1( Mem, Size );
+	  d0               a0   d0
+
+	UWORD DoCHS16_1( UBYTE *, LONG );
+
+   FUNCTION
+	Computes the 16-bit checksum used by PowerPacker password verification.
+	Each input byte is added to a running value that is then right-rotated by
+	(byte modulo 16) bit positions.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to include in the calculation
+
+    RESULT
+	sum - 16-bit checksum in the low word of the return register
+
+    SEE ALSO
+	DoCHS32_1M()
+
+crc.library/DoEORB                                                       crc.library/DoEORB
+
+   NAME
+	DoEORB -- exclusive-or of all bytes in a block.
+
+   SYNOPSIS
+	xor = DoEORB( Mem, Size );
+	  d0            a0   d0
+
+	UBYTE DoEORB( UBYTE *, LONG );
+
+   FUNCTION
+	Returns the bitwise exclusive-or of every byte in the block. All 'Size'
+	bytes are included.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to process
+
+    RESULT
+	xor - 8-bit result in the low byte of the return register
+
+    SEE ALSO
+	DoEORWM(), DoEORWI(), DoEORLM(), DoEORLI()
+
+crc.library/DoEORWM                                                     crc.library/DoEORWM
+
+   NAME
+	DoEORWM -- exclusive-or of 16-bit words (Motorola byte order).
+
+   SYNOPSIS
+	xor = DoEORWM( Mem, Size );
+	  d0             a0   d0
+
+	UWORD DoEORWM( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit words in big-endian order from the buffer and returns
+	their bitwise exclusive-or. 'Size' is divided by two before processing;
+	only complete word pairs are used.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	xor - 16-bit result in the low word of the return register
+
+    WARNING
+	A trailing odd byte at the end of the buffer is not included in the
+	calculation.
+
+    SEE ALSO
+	DoEORWI(), DoEORB()
+
+crc.library/DoEORWI                                                     crc.library/DoEORWI
+
+   NAME
+	DoEORWI -- exclusive-or of 16-bit words (Intel byte order).
+
+   SYNOPSIS
+	xor = DoEORWI( Mem, Size );
+	  d0             a0   d0
+
+	UWORD DoEORWI( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit words in little-endian order from the buffer and returns
+	their bitwise exclusive-or. 'Size' is divided by two before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	xor - 16-bit result in the low word of the return register
+
+    WARNING
+	A trailing odd byte at the end of the buffer is not included in the
+	calculation.
+
+    SEE ALSO
+	DoEORWM(), DoEORB()
+
+crc.library/DoEORLM                                                     crc.library/DoEORLM
+
+   NAME
+	DoEORLM -- exclusive-or of 32-bit longwords (Motorola byte order).
+
+   SYNOPSIS
+	xor = DoEORLM( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoEORLM( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 32-bit longwords in big-endian order and returns their bitwise
+	exclusive-or. 'Size' is divided by four before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be a multiple of four for all
+	    bytes to be used)
+
+    RESULT
+	xor - 32-bit result
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored.
+
+    SEE ALSO
+	DoEORLI(), DoEORWM()
+
+crc.library/DoEORLI                                                     crc.library/DoEORLI
+
+   NAME
+	DoEORLI -- exclusive-or of 32-bit longwords (Intel byte order).
+
+   SYNOPSIS
+	xor = DoEORLI( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoEORLI( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 32-bit longwords in little-endian order and returns their
+	bitwise exclusive-or. 'Size' is divided by four before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be a multiple of four for all
+	    bytes to be used)
+
+    RESULT
+	xor - 32-bit result
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored.
+
+    SEE ALSO
+	DoEORLM(), DoEORWI()
+
+crc.library/DoSumSB                                                     crc.library/DoSumSB
+
+   NAME
+	DoSumSB -- signed byte sum.
+
+   SYNOPSIS
+	sum = DoSumSB( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoSumSB( BYTE *, LONG );
+
+   FUNCTION
+	Returns the arithmetic sum of all bytes interpreted as signed 8-bit
+	values. All 'Size' bytes are included.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to sum
+
+    RESULT
+	sum - 32-bit sum (low bytes sign-extended before addition)
+
+    SEE ALSO
+	DoSumUB(), DoSumSWM(), DoSumSWI()
+
+crc.library/DoSumSWM                                                   crc.library/DoSumSWM
+
+   NAME
+	DoSumSWM -- signed word sum (Motorola byte order).
+
+   SYNOPSIS
+	sum = DoSumSWM( Mem, Size );
+	  d0              a0   d0
+
+	ULONG DoSumSWM( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit big-endian words from the buffer and returns the sum of
+	each word interpreted as a signed 16-bit value. 'Size' is divided by two
+	before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	A trailing odd byte is not included in the calculation.
+
+    SEE ALSO
+	DoSumSWI(), DoSumSB(), DoSumUWM()
+
+crc.library/DoSumSWI                                                   crc.library/DoSumSWI
+
+   NAME
+	DoSumSWI -- signed word sum (Intel byte order).
+
+   SYNOPSIS
+	sum = DoSumSWI( Mem, Size );
+	  d0              a0   d0
+
+	ULONG DoSumSWI( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit little-endian words from the buffer and returns the sum
+	of each word interpreted as a signed 16-bit value. 'Size' is divided by
+	two before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	A trailing odd byte is not included in the calculation.
+
+    SEE ALSO
+	DoSumSWM(), DoSumUWI()
+
+crc.library/DoSumUB                                                     crc.library/DoSumUB
+
+   NAME
+	DoSumUB -- unsigned byte sum.
+
+   SYNOPSIS
+	sum = DoSumUB( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoSumUB( UBYTE *, LONG );
+
+   FUNCTION
+	Returns the arithmetic sum of all bytes as unsigned 8-bit values. All
+	'Size' bytes are included.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to sum
+
+    RESULT
+	sum - 32-bit sum
+
+    SEE ALSO
+	DoSumSB(), DoSumUWM(), DoSumUWI()
+
+crc.library/DoSumUWM                                                   crc.library/DoSumUWM
+
+   NAME
+	DoSumUWM -- unsigned word sum (Motorola byte order).
+
+   SYNOPSIS
+	sum = DoSumUWM( Mem, Size );
+	  d0              a0   d0
+
+	ULONG DoSumUWM( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit big-endian words and returns their unsigned sum. 'Size'
+	is divided by two before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	A trailing odd byte is not included in the calculation.
+
+    SEE ALSO
+	DoSumUWI(), DoSumUB(), DoSumSWM()
+
+crc.library/DoSumUWI                                                   crc.library/DoSumUWI
+
+   NAME
+	DoSumUWI -- unsigned word sum (Intel byte order).
+
+   SYNOPSIS
+	sum = DoSumUWI( Mem, Size );
+	  d0              a0   d0
+
+	ULONG DoSumUWI( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 16-bit little-endian words and returns their unsigned sum.
+	'Size' is divided by two before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be even for all bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	A trailing odd byte is not included in the calculation.
+
+    SEE ALSO
+	DoSumUWM(), DoSumSWI()
+
+crc.library/DoSumLM                                                     crc.library/DoSumLM
+
+   NAME
+	DoSumLM -- longword sum (Motorola byte order).
+
+   SYNOPSIS
+	sum = DoSumLM( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoSumLM( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 32-bit big-endian longwords and returns their unsigned sum.
+	'Size' is divided by four before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be a multiple of four for all
+	    bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored.
+
+    SEE ALSO
+	DoSumLI(), DoSumUWM()
+
+crc.library/DoSumLI                                                     crc.library/DoSumLI
+
+   NAME
+	DoSumLI -- longword sum (Intel byte order).
+
+   SYNOPSIS
+	sum = DoSumLI( Mem, Size );
+	  d0             a0   d0
+
+	ULONG DoSumLI( UBYTE *, LONG );
+
+   FUNCTION
+	Assembles 32-bit little-endian longwords and returns their unsigned sum.
+	'Size' is divided by four before processing.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block (must be a multiple of four for all
+	    bytes to be used)
+
+    RESULT
+	sum - 32-bit accumulated sum
+
+    WARNING
+	Trailing bytes when 'Size' is not a multiple of four are ignored.
+
+    SEE ALSO
+	DoSumLM(), DoSumUWI()
+
+crc.library/md5sum                                                       crc.library/md5sum
+
+   NAME
+	md5sum -- compute an MD5 message digest.
+
+   SYNOPSIS
+	md5sum( Mem, Size, digest );
+	          a0   d0    a1
+
+	void md5sum( UBYTE *, LONG, UBYTE * );
+
+   FUNCTION
+	Computes the MD5 message digest of the memory block addressed by 'Mem'
+	of byte length 'Size' and writes the 128-bit result to 'digest'. The
+	implementation follows RFC 1321.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to hash
+	digest - pointer to a buffer of at least SIZEOF_MD5SUM (16) bytes that
+	    receives the digest
+
+    RESULT
+	None. The digest is written to the buffer pointed to by 'digest'.
+
+    WARNING
+	'digest' must point to at least SIZEOF_MD5SUM bytes of writable memory.
+	For 'Size' greater than zero, 'Mem' must not be NULL.
+
+    SEE ALSO
+	libraries/crc.h (SIZEOF_MD5SUM)

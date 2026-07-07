@@ -1,0 +1,34 @@
+##base _CRCBase
+##bias 30
+* ##private
+* ##public
+DoCRC32_1(Mem,Size)(a0,d0)
+DoCRC32_2(Mem,Size)(a0,d0)
+DoCRC32_3(Mem,Size)(a0,d0)
+DoCRC32_4(Mem,Size)(a0,d0)
+DoCRC32_5(Mem,Size)(a0,d0)
+DoCRC32_6(Mem,Size)(a0,d0)
+DoCRC16_1(Mem,Size)(a0,d0)
+DoCRC16_2(Mem,Size)(a0,d0)
+DoCRC16_3(Mem,Size)(a0,d0)
+DoCRC16_4(Mem,Size)(a0,d0)
+DoCHS32_1M(Mem,Size)(a0,d0)
+DoCHS32_1I(Mem,Size)(a0,d0)
+DoCHS32_2(Mem,Size)(a0,d0)
+DoCHS16_1(Mem,Size)(a0,d0)
+DoEORB(Mem,Size)(a0,d0)
+DoEORWM(Mem,Size)(a0,d0)
+DoEORWI(Mem,Size)(a0,d0)
+DoEORLM(Mem,Size)(a0,d0)
+DoEORLI(Mem,Size)(a0,d0)
+DoSumSB(Mem,Size)(a0,d0)
+DoSumSWM(Mem,Size)(a0,d0)
+DoSumSWI(Mem,Size)(a0,d0)
+DoSumUB(Mem,Size)(a0,d0)
+DoSumUWM(Mem,Size)(a0,d0)
+DoSumUWI(Mem,Size)(a0,d0)
+DoSumLM(Mem,Size)(a0,d0)
+DoSumLI(Mem,Size)(a0,d0)
+md5sum(Mem,Size,md5sum)(a0,d0,a1)
+##end
+

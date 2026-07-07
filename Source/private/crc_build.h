@@ -1,0 +1,9 @@
+#ifndef CRC_PRIVATE_CRC_BUILD_H
+#define CRC_PRIVATE_CRC_BUILD_H
+
+#include "Rev.h"
+
+#define CRC_LIB_VERSION   VERNUM
+#define CRC_LIB_REVISION  REVNUM
+
+#endif /* CRC_PRIVATE_CRC_BUILD_H */
