@@ -40,6 +40,11 @@
 #pragma libcall CRCBase DoSumUWI AE 0802
 #pragma libcall CRCBase DoSumLM B4 0802
 #pragma libcall CRCBase DoSumLI BA 0802
-#pragma libcall CRCBase md5sum C0 90803
+#pragma libcall CRCBase DoMD5Sum C0 90803
+#pragma libcall CRCBase DoSHA1 C6 90803
+#pragma libcall CRCBase DoSHA256 CC 90803
+#pragma libcall CRCBase DoCHS16_2 D2 0802
+#pragma libcall CRCBase DoCHS16_3 D8 0802
+#pragma libcall CRCBase DoCRC32_7 DE 0802
 
 #endif /* PRAGMAS_CRC_PRAGMAS_H */

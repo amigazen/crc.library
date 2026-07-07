@@ -279,14 +279,64 @@
 	r;   \
 })
 
-#define md5sum(Mem, Size, md5sum)    \
+#define DoMD5Sum(Mem, Size, Digest)    \
 ({  \
 	register void *b __asm("a6") = CRCBase;  \
 	register UBYTE *p0 __asm("a0") = (Mem);   \
 	register LONG p1 __asm("d0") = (Size);   \
-	register UBYTE *p2 __asm("a1") = (md5sum);   \
-	__asm volatile ("jsr a6@(-192:W);" : "+r"(b), "=r"(r) : "r"(p0), "r"(p1), "r"(p2) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	register UBYTE *p2 __asm("a1") = (Digest);   \
+	__asm volatile ("jsr a6@(-192:W);" : "+r"(b) : "r"(p0), "r"(p1), "r"(p2) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
 })
+
+#define DoSHA1(Mem, Size, Digest)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register UBYTE *p0 __asm("a0") = (Mem);   \
+	register LONG p1 __asm("d0") = (Size);   \
+	register UBYTE *p2 __asm("a1") = (Digest);   \
+	__asm volatile ("jsr a6@(-198:W);" : "+r"(b) : "r"(p0), "r"(p1), "r"(p2) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+})
+
+#define DoSHA256(Mem, Size, Digest)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register UBYTE *p0 __asm("a0") = (Mem);   \
+	register LONG p1 __asm("d0") = (Size);   \
+	register UBYTE *p2 __asm("a1") = (Digest);   \
+	__asm volatile ("jsr a6@(-204:W);" : "+r"(b) : "r"(p0), "r"(p1), "r"(p2) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+})
+
+#define DoCHS16_2(Mem, Size)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register UBYTE *p0 __asm("a0") = (Mem);   \
+	register LONG p1 __asm("d0") = (Size);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-210:W);" : "+r"(b), "=r"(r) : "r"(p0), "r"(p1) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
+#define DoCHS16_3(Mem, Size)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register UBYTE *p0 __asm("a0") = (Mem);   \
+	register LONG p1 __asm("d0") = (Size);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-216:W);" : "+r"(b), "=r"(r) : "r"(p0), "r"(p1) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
+#define DoCRC32_7(Mem, Size)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register UBYTE *p0 __asm("a0") = (Mem);   \
+	register LONG p1 __asm("d0") = (Size);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-222:W);" : "+r"(b), "=r"(r) : "r"(p0), "r"(p1) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
+#define md5sum(Mem, Size, Digest) DoMD5Sum((Mem), (Size), (Digest))
 
 
 #endif /* INLINE_CRC_H */

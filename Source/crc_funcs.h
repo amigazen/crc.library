@@ -104,9 +104,26 @@ ULONG __ASM__ __SAVE_DS__ DoSumLM(
 ULONG __ASM__ __SAVE_DS__ DoSumLI(
 	__REG__(a0, const UBYTE *Mem),
 	__REG__(d0, LONG Size));
-VOID __ASM__ __SAVE_DS__ md5sum(
+VOID __ASM__ __SAVE_DS__ DoMD5Sum(
 	__REG__(a0, const UBYTE *Mem),
 	__REG__(d0, LONG Size),
-	__REG__(a1, UBYTE *md5sum));
+	__REG__(a1, UBYTE *Digest));
+VOID __ASM__ __SAVE_DS__ DoSHA1(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size),
+	__REG__(a1, UBYTE *Digest));
+VOID __ASM__ __SAVE_DS__ DoSHA256(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size),
+	__REG__(a1, UBYTE *Digest));
+UWORD __ASM__ __SAVE_DS__ DoCHS16_2(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+UWORD __ASM__ __SAVE_DS__ DoCHS16_3(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ DoCRC32_7(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
 
 #endif /* CRC_FUNCS_H */

@@ -90,8 +90,24 @@ ULONG __DoSumLM(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Siz
 ULONG __DoSumLI(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-186(a6)";
 #define DoSumLI(Mem, Size) __DoSumLI(CRCBase, (Mem), (Size))
 
-void __md5sum(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *md5sum)="\tjsr\t-192(a6)";
-#define md5sum(Mem, Size, md5sum) __md5sum(CRCBase, (Mem), (Size), (md5sum))
+void __DoMD5Sum(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *Digest)="\tjsr\t-192(a6)";
+#define DoMD5Sum(Mem, Size, Digest) __DoMD5Sum(CRCBase, (Mem), (Size), (Digest))
+
+/*--- functions in V2 or higher --- */
+void __DoSHA1(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *Digest)="\tjsr\t-198(a6)";
+#define DoSHA1(Mem, Size, Digest) __DoSHA1(CRCBase, (Mem), (Size), (Digest))
+
+void __DoSHA256(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *Digest)="\tjsr\t-204(a6)";
+#define DoSHA256(Mem, Size, Digest) __DoSHA256(CRCBase, (Mem), (Size), (Digest))
+
+UWORD __DoCHS16_2(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-210(a6)";
+#define DoCHS16_2(Mem, Size) __DoCHS16_2(CRCBase, (Mem), (Size))
+
+UWORD __DoCHS16_3(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-216(a6)";
+#define DoCHS16_3(Mem, Size) __DoCHS16_3(CRCBase, (Mem), (Size))
+
+ULONG __DoCRC32_7(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-222(a6)";
+#define DoCRC32_7(Mem, Size) __DoCRC32_7(CRCBase, (Mem), (Size))
 
 
 #endif /* INLINE_CRC_PROTOS_H */

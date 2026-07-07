@@ -72,7 +72,12 @@ APTR FuncTab[] = {
 	(APTR)DoSumUWI,
 	(APTR)DoSumLM,
 	(APTR)DoSumLI,
-	(APTR)md5sum,
+	(APTR)DoMD5Sum,
+	(APTR)DoSHA1,
+	(APTR)DoSHA256,
+	(APTR)DoCHS16_2,
+	(APTR)DoCHS16_3,
+	(APTR)DoCRC32_7,
 	(APTR)((LONG)-1)
 };
 

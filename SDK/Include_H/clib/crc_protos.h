@@ -44,7 +44,13 @@ ULONG DoSumUWM(UBYTE *Mem, LONG Size);
 ULONG DoSumUWI(UBYTE *Mem, LONG Size);
 ULONG DoSumLM(UBYTE *Mem, LONG Size);
 ULONG DoSumLI(UBYTE *Mem, LONG Size);
-void md5sum(UBYTE *Mem, LONG Size, UBYTE *md5sum);
+void DoMD5Sum(UBYTE *Mem, LONG Size, UBYTE *Digest);
+/*--- functions in V2 or higher ---*/
+void DoSHA1(UBYTE *Mem, LONG Size, UBYTE *Digest);
+void DoSHA256(UBYTE *Mem, LONG Size, UBYTE *Digest);
+UWORD DoCHS16_2(UBYTE *Mem, LONG Size);
+UWORD DoCHS16_3(UBYTE *Mem, LONG Size);
+ULONG DoCRC32_7(UBYTE *Mem, LONG Size);
 
 #ifdef __cplusplus
 }

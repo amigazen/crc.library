@@ -1,7 +1,3 @@
-##base _CRCBase
-##bias 30
-* ##private
-* ##public
 DoCRC32_1(Mem,Size)(a0,d0)
 DoCRC32_2(Mem,Size)(a0,d0)
 DoCRC32_3(Mem,Size)(a0,d0)
@@ -29,5 +25,9 @@ DoSumUWM(Mem,Size)(a0,d0)
 DoSumUWI(Mem,Size)(a0,d0)
 DoSumLM(Mem,Size)(a0,d0)
 DoSumLI(Mem,Size)(a0,d0)
-md5sum(Mem,Size,md5sum)(a0,d0,a1)
-##end
+DoMD5Sum(Mem,Size,Digest)(a0,d0,a1)
+DoSHA1(Mem,Size,Digest)(a0,d0,a1)
+DoSHA256(Mem,Size,Digest)(a0,d0,a1)
+DoCHS16_2(Mem,Size)(a0,d0)
+DoCHS16_3(Mem,Size)(a0,d0)
+DoCRC32_7(Mem,Size)(a0,d0)

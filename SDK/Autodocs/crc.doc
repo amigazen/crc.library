@@ -27,7 +27,12 @@ crc.library/DoSumUWM
 crc.library/DoSumUWI
 crc.library/DoSumLM
 crc.library/DoSumLI
-crc.library/md5sum
+crc.library/DoMD5Sum
+crc.library/DoSHA1
+crc.library/DoSHA256
+crc.library/DoCHS16_2
+crc.library/DoCHS16_3
+crc.library/DoCRC32_7
 crc.library/DoCRC32_1                                                 crc.library/DoCRC32_1
 
    NAME
@@ -783,34 +788,165 @@ crc.library/md5sum
     SEE ALSO
 	DoSumLM(), DoSumUWI()
 
-crc.library/md5sum                                                       crc.library/md5sum
+crc.library/DoMD5Sum                                                   crc.library/DoMD5Sum
 
    NAME
-	md5sum -- compute an MD5 message digest.
+	DoMD5Sum -- compute an MD5 message digest.
 
    SYNOPSIS
-	md5sum( Mem, Size, digest );
-	          a0   d0    a1
+	DoMD5Sum( Mem, Size, Digest );
+	            a0   d0      a1
 
-	void md5sum( UBYTE *, LONG, UBYTE * );
+	void DoMD5Sum( UBYTE *, LONG, UBYTE * );
 
    FUNCTION
 	Computes the MD5 message digest of the memory block addressed by 'Mem'
-	of byte length 'Size' and writes the 128-bit result to 'digest'. The
-	implementation follows RFC 1321.
+	of byte length 'Size' and writes the 128-bit result to 'Digest'. The
+	implementation follows RFC 1321. Used by Subversion and legacy tooling.
+
+	The legacy name md5sum is available as a macro in clib/crc_protos.h.
 
     INPUTS
 	Mem - pointer to the first byte of the data block
 	Size - number of bytes to hash
-	digest - pointer to a buffer of at least SIZEOF_MD5SUM (16) bytes that
-	    receives the digest
+	Digest - pointer to a buffer of at least SIZEOF_MD5SUM (16) bytes
 
     RESULT
-	None. The digest is written to the buffer pointed to by 'digest'.
+	None. The digest is written to 'Digest'.
 
     WARNING
-	'digest' must point to at least SIZEOF_MD5SUM bytes of writable memory.
-	For 'Size' greater than zero, 'Mem' must not be NULL.
+	'Digest' must point to at least SIZEOF_MD5SUM bytes of writable memory.
 
     SEE ALSO
-	libraries/crc.h (SIZEOF_MD5SUM)
+	DoSHA1(), DoSHA256(), libraries/crc.h
+
+crc.library/DoSHA1                                                     crc.library/DoSHA1
+
+   NAME
+	DoSHA1 -- compute a SHA-1 message digest.
+
+   SYNOPSIS
+	DoSHA1( Mem, Size, Digest );
+	          a0   d0      a1
+
+	void DoSHA1( UBYTE *, LONG, UBYTE * );
+
+   FUNCTION
+	Computes the 160-bit SHA-1 digest (FIPS PUB 180-1 / RFC 3174) of the
+	memory block at 'Mem'. Required for git object hashing and Subversion
+	checksums.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to hash
+	Digest - pointer to a buffer of at least SIZEOF_SHA1SUM (20) bytes
+
+    RESULT
+	None. The digest is written to 'Digest'.
+
+    SEE ALSO
+	DoSHA256(), DoMD5Sum(), libraries/crc.h
+
+crc.library/DoSHA256                                                 crc.library/DoSHA256
+
+   NAME
+	DoSHA256 -- compute a SHA-256 message digest.
+
+   SYNOPSIS
+	DoSHA256( Mem, Size, Digest );
+	            a0   d0      a1
+
+	void DoSHA256( UBYTE *, LONG, UBYTE * );
+
+   FUNCTION
+	Computes the 256-bit SHA-256 digest (FIPS PUB 180-4) of the memory
+	block at 'Mem'. Used by git repositories configured for SHA-256 object
+	names.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - number of bytes to hash
+	Digest - pointer to a buffer of at least SIZEOF_SHA256SUM (32) bytes
+
+    RESULT
+	None. The digest is written to 'Digest'.
+
+    SEE ALSO
+	DoSHA1(), libraries/crc.h
+
+crc.library/DoCHS16_2                                               crc.library/DoCHS16_2
+
+   NAME
+	DoCHS16_2 -- compute a 16-bit BSD sum.
+
+   SYNOPSIS
+	sum = DoCHS16_2( Mem, Size );
+	      d0          a0   d0
+
+	UWORD DoCHS16_2( UBYTE *, LONG );
+
+   FUNCTION
+	Computes the 16-bit checksum used by the BSD sum utility (rotate-right
+	with carry, then add each byte). Result is returned as an unsigned value.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block
+
+    RESULT
+	sum - 16-bit BSD checksum
+
+    SEE ALSO
+	DoCHS16_3(), DoCHS16_1()
+
+crc.library/DoCHS16_3                                               crc.library/DoCHS16_3
+
+   NAME
+	DoCHS16_3 -- compute a 16-bit SYSV sum.
+
+   SYNOPSIS
+	sum = DoCHS16_3( Mem, Size );
+	      d0          a0   d0
+
+	UWORD DoCHS16_3( UBYTE *, LONG );
+
+   FUNCTION
+	Computes the 16-bit checksum used by the SYSV sum utility: sum all
+	bytes modulo 65535.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block
+
+    RESULT
+	sum - 16-bit SYSV checksum
+
+    SEE ALSO
+	DoCHS16_2(), DoCHS16_1()
+
+crc.library/DoCRC32_7                                               crc.library/DoCRC32_7
+
+   NAME
+	DoCRC32_7 -- compute a POSIX cksum CRC-32.
+
+   SYNOPSIS
+	crc = DoCRC32_7( Mem, Size );
+	      d0          a0   d0
+
+	ULONG DoCRC32_7( UBYTE *, LONG );
+
+   FUNCTION
+	Computes the 32-bit CRC used by the POSIX cksum utility. Uses the
+	reflected polynomial 0x04C11DB7, folds the byte length into the CRC,
+	and inverts the final result. The decimal value printed by cksum matches
+	this ULONG on typical 32-bit hosts.
+
+    INPUTS
+	Mem - pointer to the first byte of the data block
+	Size - byte length of the block
+
+    RESULT
+	crc - inverted CRC-32 suitable for cksum comparison
+
+    SEE ALSO
+	DoCRC32_1(), DoCRC32_2()

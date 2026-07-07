@@ -37,5 +37,11 @@ _LVODoSumUWM equ -168
 _LVODoSumUWI equ -174
 _LVODoSumLM equ -180
 _LVODoSumLI equ -186
-_LVOmd5sum equ -192
+_LVODoMD5Sum equ -192
+**--- functions in V2 or higher ---
+_LVODoSHA1 equ -198
+_LVODoSHA256 equ -204
+_LVODoCHS16_2 equ -210
+_LVODoCHS16_3 equ -216
+_LVODoCRC32_7 equ -222
 

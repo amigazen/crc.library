@@ -40,6 +40,12 @@
 #pragma amicall(CRCBase, 0xAE, DoSumUWI(a0,d0))
 #pragma amicall(CRCBase, 0xB4, DoSumLM(a0,d0))
 #pragma amicall(CRCBase, 0xBA, DoSumLI(a0,d0))
-#pragma amicall(CRCBase, 0xC0, md5sum(a0,d0,a1))
+#pragma amicall(CRCBase, 0xC0, DoMD5Sum(a0,d0,a1))
+/*--- functions in V2 or higher --- */
+#pragma amicall(CRCBase, 0xC6, DoSHA1(a0,d0,a1))
+#pragma amicall(CRCBase, 0xCC, DoSHA256(a0,d0,a1))
+#pragma amicall(CRCBase, 0xD2, DoCHS16_2(a0,d0))
+#pragma amicall(CRCBase, 0xD8, DoCHS16_3(a0,d0))
+#pragma amicall(CRCBase, 0xDE, DoCRC32_7(a0,d0))
 
 #endif /* PRAGMA_CRC_LIB_H */

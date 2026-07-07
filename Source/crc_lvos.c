@@ -223,10 +223,52 @@ DoSumLI(
 }
 
 __ASM__ __SAVE_DS__ VOID
-md5sum(
+DoMD5Sum(
 	__REG__(a0, const UBYTE *Mem),
 	__REG__(d0, LONG Size),
-	__REG__(a1, UBYTE *md5sum))
+	__REG__(a1, UBYTE *Digest))
 {
-	crc_md5sum(Mem, Size, md5sum);
+	crc_DoMD5Sum(Mem, Size, Digest);
+}
+
+__ASM__ __SAVE_DS__ VOID
+DoSHA1(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size),
+	__REG__(a1, UBYTE *Digest))
+{
+	crc_DoSHA1(Mem, Size, Digest);
+}
+
+__ASM__ __SAVE_DS__ VOID
+DoSHA256(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size),
+	__REG__(a1, UBYTE *Digest))
+{
+	crc_DoSHA256(Mem, Size, Digest);
+}
+
+__ASM__ __SAVE_DS__ UWORD
+DoCHS16_2(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return crc_DoCHS16_2(Mem, Size);
+}
+
+__ASM__ __SAVE_DS__ UWORD
+DoCHS16_3(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return crc_DoCHS16_3(Mem, Size);
+}
+
+__ASM__ __SAVE_DS__ ULONG
+DoCRC32_7(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return crc_DoCRC32_7(Mem, Size);
 }

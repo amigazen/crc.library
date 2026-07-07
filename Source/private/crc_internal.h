@@ -38,6 +38,11 @@ ULONG crc_DoSumUWM(const UBYTE *Mem, LONG Size);
 ULONG crc_DoSumUWI(const UBYTE *Mem, LONG Size);
 ULONG crc_DoSumLM(const UBYTE *Mem, LONG Size);
 ULONG crc_DoSumLI(const UBYTE *Mem, LONG Size);
-void crc_md5sum(const UBYTE *Mem, LONG Size, UBYTE md5sum[SIZEOF_MD5SUM]);
+void crc_DoMD5Sum(const UBYTE *Mem, LONG Size, UBYTE Digest[SIZEOF_MD5SUM]);
+void crc_DoSHA1(const UBYTE *Mem, LONG Size, UBYTE Digest[SIZEOF_SHA1SUM]);
+void crc_DoSHA256(const UBYTE *Mem, LONG Size, UBYTE Digest[SIZEOF_SHA256SUM]);
+UWORD crc_DoCHS16_2(const UBYTE *Mem, LONG Size);
+UWORD crc_DoCHS16_3(const UBYTE *Mem, LONG Size);
+ULONG crc_DoCRC32_7(const UBYTE *Mem, LONG Size);
 
 #endif /* CRC_PRIVATE_CRC_INTERNAL_H */

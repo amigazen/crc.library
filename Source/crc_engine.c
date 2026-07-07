@@ -926,15 +926,82 @@ static void MD5Final(UBYTE digest[16], struct md5context *p)
   crc_bzero(p->buffer, sizeof(p->buffer));
 }
 
+/****************************************************************************/
+/*              POSIX cksum and BSD/SYSV 16-bit sums (GetCRC 1.19)          */
+/****************************************************************************/
+
+ULONG
+crc_DoCRC32_7(const UBYTE *Mem, LONG Size)
+{
+  ULONG CRC;
+  ULONG origsize;
+  const ULONG *buf;
+
+  CRC = 0;
+  origsize = (ULONG)Size;
+  buf = table32R;
+
+  while (Size--)
+  {
+    CRC = buf[(CRC >> 24) ^ *(Mem++)] ^ (CRC << 8);
+  }
+
+  while (origsize)
+  {
+    CRC = buf[(CRC >> 24) ^ (origsize & 0xFF)] ^ (CRC << 8);
+    origsize >>= 8;
+  }
+
+  return ~CRC;
+}
+
+UWORD
+crc_DoCHS16_2(const UBYTE *Mem, LONG Size)
+{
+  UWORD sum;
+
+  sum = 0;
+  while (Size--)
+  {
+    if (sum & 1)
+    {
+      sum = (UWORD)((sum >> 1) + 0x8000);
+    }
+    else
+    {
+      sum = (UWORD)(sum >> 1);
+    }
+    sum = (UWORD)(sum + *(Mem++));
+  }
+  return sum;
+}
+
+UWORD
+crc_DoCHS16_3(const UBYTE *Mem, LONG Size)
+{
+  ULONG sum;
+
+  sum = 0;
+  while (Size--)
+  {
+    sum += *(Mem++);
+  }
+  return (UWORD)(sum % 0xFFFF);
+}
+
+/****************************************************************************/
+/*                              MD5 message digest                          */
+/****************************************************************************/
+
 void
-crc_md5sum(
+crc_DoMD5Sum(
   const UBYTE *Mem,
   LONG Size,
-  UBYTE md5sum[16])
+  UBYTE Digest[SIZEOF_MD5SUM])
 {
   struct md5context m;
 
   MD5Init(&m);
   MD5Update(&m, Mem, Size);
-  MD5Final(md5sum, &m);
+  MD5Final(Digest, &m);
 }
