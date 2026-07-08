@@ -1,4 +1,4 @@
-FROM "StartUp.o"+"LibInit.o"+"crc_lvos.o"+"crc_engine.o"+"crc_sha1.o"+"crc_sha256.o"+"crc_libc.o"
+FROM "StartUp.o"+"LibInit.o"+"crc_lvos.o"+"crc_engine.o"+"crc_sha1.o"+"crc_sha256.o"+"crc_stream.o"+"crc_libc.o"
 TO "crc.library"
 LIB LIB:sc.lib LIB:amiga.lib
 ADDSYM

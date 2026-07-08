@@ -45,14 +45,22 @@ ULONG DoSumUWI(UBYTE *Mem, LONG Size);
 ULONG DoSumLM(UBYTE *Mem, LONG Size);
 ULONG DoSumLI(UBYTE *Mem, LONG Size);
 void DoMD5Sum(UBYTE *Mem, LONG Size, UBYTE *Digest);
+/*--- functions in V2 or higher ---*/
 void DoSHA1(UBYTE *Mem, LONG Size, UBYTE *Digest);
 void DoSHA256(UBYTE *Mem, LONG Size, UBYTE *Digest);
 UWORD DoCHS16_2(UBYTE *Mem, LONG Size);
 UWORD DoCHS16_3(UBYTE *Mem, LONG Size);
 ULONG DoCRC32_7(UBYTE *Mem, LONG Size);
-
-/* Legacy GetCRC / crc.library v1.0 name; same LVO offset as DoMD5Sum. */
-#define md5sum(Mem, Size, Digest) DoMD5Sum((Mem), (Size), (Digest))
+ULONG CRCReserved1(UBYTE *Mem, LONG Size);
+ULONG CRCReserved2(UBYTE *Mem, LONG Size);
+ULONG CRCReserved3(UBYTE *Mem, LONG Size);
+ULONG CRCReserved4(UBYTE *Mem, LONG Size);
+APTR CRCNew(ULONG type);
+void CRCReset(APTR handle);
+void CRCUpdate(APTR handle, UBYTE *Mem, LONG Size);
+ULONG CRCFinal(APTR handle, UBYTE *Digest);
+void CRCDispose(APTR handle);
+ULONG CRCDigestLength(ULONG type);
 
 #ifdef __cplusplus
 }

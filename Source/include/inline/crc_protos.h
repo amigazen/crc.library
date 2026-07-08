@@ -93,6 +93,7 @@ ULONG __DoSumLI(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Siz
 void __DoMD5Sum(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *Digest)="\tjsr\t-192(a6)";
 #define DoMD5Sum(Mem, Size, Digest) __DoMD5Sum(CRCBase, (Mem), (Size), (Digest))
 
+/*--- functions in V2 or higher --- */
 void __DoSHA1(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size, __reg("a1") UBYTE *Digest)="\tjsr\t-198(a6)";
 #define DoSHA1(Mem, Size, Digest) __DoSHA1(CRCBase, (Mem), (Size), (Digest))
 
@@ -108,7 +109,35 @@ UWORD __DoCHS16_3(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG S
 ULONG __DoCRC32_7(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-222(a6)";
 #define DoCRC32_7(Mem, Size) __DoCRC32_7(CRCBase, (Mem), (Size))
 
-#define md5sum(Mem, Size, Digest) DoMD5Sum((Mem), (Size), (Digest))
+ULONG __CRCReserved1(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-228(a6)";
+#define CRCReserved1(Mem, Size) __CRCReserved1(CRCBase, (Mem), (Size))
+
+ULONG __CRCReserved2(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-234(a6)";
+#define CRCReserved2(Mem, Size) __CRCReserved2(CRCBase, (Mem), (Size))
+
+ULONG __CRCReserved3(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-240(a6)";
+#define CRCReserved3(Mem, Size) __CRCReserved3(CRCBase, (Mem), (Size))
+
+ULONG __CRCReserved4(__reg("a6") void *, __reg("a0") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-246(a6)";
+#define CRCReserved4(Mem, Size) __CRCReserved4(CRCBase, (Mem), (Size))
+
+APTR __CRCNew(__reg("a6") void *, __reg("d0") ULONG type)="\tjsr\t-252(a6)";
+#define CRCNew(type) __CRCNew(CRCBase, (type))
+
+void __CRCReset(__reg("a6") void *, __reg("a0") APTR handle)="\tjsr\t-258(a6)";
+#define CRCReset(handle) __CRCReset(CRCBase, (handle))
+
+void __CRCUpdate(__reg("a6") void *, __reg("a0") APTR handle, __reg("a1") UBYTE *Mem, __reg("d0") LONG Size)="\tjsr\t-264(a6)";
+#define CRCUpdate(handle, Mem, Size) __CRCUpdate(CRCBase, (handle), (Mem), (Size))
+
+ULONG __CRCFinal(__reg("a6") void *, __reg("a0") APTR handle, __reg("a1") UBYTE *Digest)="\tjsr\t-270(a6)";
+#define CRCFinal(handle, Digest) __CRCFinal(CRCBase, (handle), (Digest))
+
+void __CRCDispose(__reg("a6") void *, __reg("a0") APTR handle)="\tjsr\t-276(a6)";
+#define CRCDispose(handle) __CRCDispose(CRCBase, (handle))
+
+ULONG __CRCDigestLength(__reg("a6") void *, __reg("d0") ULONG type)="\tjsr\t-282(a6)";
+#define CRCDigestLength(type) __CRCDigestLength(CRCBase, (type))
 
 
 #endif /* INLINE_CRC_PROTOS_H */

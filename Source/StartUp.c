@@ -13,6 +13,7 @@
 #include <proto/exec.h>
 
 #include "private/crc_build.h"
+#include "private/crc_internal.h"
 #include "crc_funcs.h"
 
 extern const char AS_LibName[];
@@ -34,7 +35,7 @@ static VOID FreeLib(struct Library *lib);
 APTR FuncTab[];
 
 struct InitTable InitTab = {
-	(ULONG)sizeof(struct Library),
+	(ULONG)sizeof(struct CRCLibBase),
 	(APTR *)FuncTab,
 	(APTR)NULL,
 	(APTR)LibInit
@@ -78,6 +79,16 @@ APTR FuncTab[] = {
 	(APTR)DoCHS16_2,
 	(APTR)DoCHS16_3,
 	(APTR)DoCRC32_7,
+	(APTR)CRCReserved1,
+	(APTR)CRCReserved2,
+	(APTR)CRCReserved3,
+	(APTR)CRCReserved4,
+	(APTR)CRCNew,
+	(APTR)CRCReset,
+	(APTR)CRCUpdate,
+	(APTR)CRCFinal,
+	(APTR)CRCDispose,
+	(APTR)CRCDigestLength,
 	(APTR)((LONG)-1)
 };
 
@@ -93,9 +104,14 @@ __ASM__ __SAVE_DS__ LibInit(
 	__REG__(a0, APTR seglist),
 	__REG__(d0, struct Library *lib))
 {
+	struct CRCLibBase *cb = (struct CRCLibBase *)lib;
+
 	SysBase = sysbase;
 	SegList = seglist;
 	CRCBase = lib;
+
+	cb->cb_Pool = NULL;
+	InitSemaphore(&cb->cb_PoolSem);
 
 	lib->lib_Node.ln_Type = NT_LIBRARY;
 	lib->lib_Node.ln_Pri = 0;
@@ -150,6 +166,14 @@ __ASM__ __SAVE_DS__ LibExpunge(__REG__(a6, struct Library *lib))
 static VOID
 FreeLib(struct Library *lib)
 {
+	struct CRCLibBase *cb = (struct CRCLibBase *)lib;
+
+	if (cb->cb_Pool != NULL)
+	{
+		DeletePool(cb->cb_Pool);
+		cb->cb_Pool = NULL;
+	}
+
 	FreeMem((UBYTE *)lib - lib->lib_NegSize, lib->lib_NegSize + lib->lib_PosSize);
 	CRCBase = NULL;
 }

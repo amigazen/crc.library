@@ -29,6 +29,7 @@ OBJS = \
 	crc_engine.o \
 	crc_sha1.o \
 	crc_sha256.o \
+	crc_stream.o \
 	crc_libc.o
 
 ###############################################################################
@@ -66,6 +67,9 @@ crc_sha1.o: crc_sha1.c private/crc_internal.h
 	Sc $(CFLAGS) OBJNAME $@ $<
 
 crc_sha256.o: crc_sha256.c private/crc_internal.h
+	Sc $(CFLAGS) OBJNAME $@ $<
+
+crc_stream.o: crc_stream.c private/crc_internal.h
 	Sc $(CFLAGS) OBJNAME $@ $<
 
 crc_libc.o: crc_libc.c private/crc_internal.h

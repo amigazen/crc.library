@@ -47,5 +47,15 @@
 #pragma amicall(CRCBase, 0xD2, DoCHS16_2(a0,d0))
 #pragma amicall(CRCBase, 0xD8, DoCHS16_3(a0,d0))
 #pragma amicall(CRCBase, 0xDE, DoCRC32_7(a0,d0))
+#pragma amicall(CRCBase, 0xE4, CRCReserved1(a0,d0))
+#pragma amicall(CRCBase, 0xEA, CRCReserved2(a0,d0))
+#pragma amicall(CRCBase, 0xF0, CRCReserved3(a0,d0))
+#pragma amicall(CRCBase, 0xF6, CRCReserved4(a0,d0))
+#pragma amicall(CRCBase, 0xFC, CRCNew(d0))
+#pragma amicall(CRCBase, 0x102, CRCReset(a0))
+#pragma amicall(CRCBase, 0x108, CRCUpdate(a0,a1,d0))
+#pragma amicall(CRCBase, 0x10E, CRCFinal(a0,a1))
+#pragma amicall(CRCBase, 0x114, CRCDispose(a0))
+#pragma amicall(CRCBase, 0x11A, CRCDigestLength(d0))
 
 #endif /* PRAGMA_CRC_LIB_H */

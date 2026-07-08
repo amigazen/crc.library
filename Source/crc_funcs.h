@@ -125,5 +125,33 @@ UWORD __ASM__ __SAVE_DS__ DoCHS16_3(
 ULONG __ASM__ __SAVE_DS__ DoCRC32_7(
 	__REG__(a0, const UBYTE *Mem),
 	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ CRCReserved1(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ CRCReserved2(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ CRCReserved3(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ CRCReserved4(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+
+APTR __ASM__ __SAVE_DS__ CRCNew(
+	__REG__(d0, ULONG type));
+VOID __ASM__ __SAVE_DS__ CRCReset(
+	__REG__(a0, APTR handle));
+VOID __ASM__ __SAVE_DS__ CRCUpdate(
+	__REG__(a0, APTR handle),
+	__REG__(a1, const UBYTE *Mem),
+	__REG__(d0, LONG Size));
+ULONG __ASM__ __SAVE_DS__ CRCFinal(
+	__REG__(a0, APTR handle),
+	__REG__(a1, UBYTE *Digest));
+VOID __ASM__ __SAVE_DS__ CRCDispose(
+	__REG__(a0, APTR handle));
+ULONG __ASM__ __SAVE_DS__ CRCDigestLength(
+	__REG__(d0, ULONG type));
 
 #endif /* CRC_FUNCS_H */

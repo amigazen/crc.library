@@ -206,3 +206,11 @@ crc_DoSHA256(const UBYTE *Mem, LONG Size, UBYTE Digest[SIZEOF_SHA256SUM])
   sha256_update(&ctx, Mem, (ULONG)Size);
   sha256_final(&ctx, Digest);
 }
+
+/* Opaque sub-context wrappers for the streaming API. */
+ULONG crc_sha256_ctxsize(void) { return (ULONG)sizeof(struct SHA256Context); }
+void crc_sha256_init(APTR ctx) { sha256_init((struct SHA256Context *)ctx); }
+void crc_sha256_update(APTR ctx, const UBYTE *data, ULONG len)
+  { sha256_update((struct SHA256Context *)ctx, data, len); }
+void crc_sha256_final(APTR ctx, UBYTE *digest)
+  { sha256_final((struct SHA256Context *)ctx, digest); }

@@ -1005,3 +1005,412 @@ crc_DoMD5Sum(
   MD5Update(&m, Mem, Size);
   MD5Final(Digest, &m);
 }
+
+/* MD5 opaque sub-context wrappers for the streaming API. */
+ULONG crc_md5_ctxsize(void) { return (ULONG)sizeof(struct md5context); }
+void crc_md5_init(APTR ctx) { MD5Init((struct md5context *)ctx); }
+void crc_md5_update(APTR ctx, const UBYTE *data, ULONG len)
+  { MD5Update((struct md5context *)ctx, data, len); }
+void crc_md5_final(APTR ctx, UBYTE *digest)
+  { MD5Final(digest, (struct md5context *)ctx); }
+
+/****************************************************************************/
+/*            incremental (streaming) engine — see libraries/crc.h         */
+/****************************************************************************/
+
+/*
+ * The streaming engine reproduces each one-shot Do* algorithm step by step so
+ * that hashing a data stream in arbitrary pieces yields a bit-identical result
+ * to the corresponding one-shot call over the concatenated data.  All state is
+ * held in the caller's struct CRCHandle, so updates require no locking.
+ */
+
+#define CHS32_2_BLOCK 0x1600
+
+/* Returns the natural processing unit (bytes) for a numeric algorithm. */
+static UWORD stream_unit(ULONG type)
+{
+  switch (type)
+  {
+    case CRC_EORWM: case CRC_EORWI:
+    case CRC_SUMSWM: case CRC_SUMSWI:
+    case CRC_SUMUWM: case CRC_SUMUWI:
+      return 2;
+    case CRC_EORLM: case CRC_EORLI:
+    case CRC_SUMLM: case CRC_SUMLI:
+    case CRC_CHS32_1M: case CRC_CHS32_1I:
+      return 4;
+    default:
+      return 1;
+  }
+}
+
+/* Byte-at-a-time algorithms: one tight loop per type. */
+static void stream_bytes(struct CRCHandle *h, const UBYTE *m, LONG n)
+{
+  ULONG v = h->ch_Value;
+  UWORD w = (UWORD)h->ch_Value;
+
+  switch (h->ch_Type)
+  {
+    case CRC_CRC32_1: case CRC_CRC32_2: case CRC_CRC32_3:
+      while (n--)
+        v = table32_[(v ^ *m++) & 0xFF] ^ (v >> 8);
+      h->ch_Value = v;
+      break;
+
+    case CRC_CRC32_5: case CRC_CRC32_6: case CRC_CRC32_7:
+      while (n--)
+        v = table32R[(v >> 24) ^ *m++] ^ (v << 8);
+      h->ch_Value = v;
+      break;
+
+    case CRC_CRC32_4:
+      while (n--)
+      {
+        UBYTE bytevar = *m++;
+        UBYTE l;
+        ULONG highbit;
+        ULONG newbit;
+
+        for (l = 1; l <= 8; l++)
+        {
+          highbit = v & 0x80000000UL;
+          v <<= 1;
+          newbit = (bytevar & 0x80) >> 7;
+          bytevar <<= 1;
+          v |= newbit;
+          if (highbit)
+            v ^= 0x04C11DB7UL;
+        }
+      }
+      h->ch_Value = v;
+      break;
+
+    case CRC_CRC16_1:
+      while (n--)
+        w = table16_[(w ^ *m++) & 0xFF] ^ (w >> 8);
+      h->ch_Value = w;
+      break;
+
+    case CRC_CRC16_2:
+      while (n--)
+        w = table16R[((w >> 8) ^ *m++) & 0xFF] ^ (w << 8);
+      h->ch_Value = w;
+      break;
+
+    case CRC_CRC16_3:
+      while (n--)
+      {
+        UWORD c = w;
+        w <<= 1;
+        w = (UBYTE)(w + *m++) + (w & 0xFF00);
+        if (c & 0x8000)
+          w ^= 0xA097;
+      }
+      h->ch_Value = w;
+      break;
+
+    case CRC_CRC16_4:
+      while (n--)
+        w = table16R[((w >> 8) & 0xFF)] ^ ((w << 8) ^ *m++);
+      h->ch_Value = w;
+      break;
+
+    case CRC_CHS16_1:
+      while (n--)
+      {
+        UWORD i = *m++;
+        UWORD k = i % 16;
+        w = i + ((w >> k) | (w << (16 - k)));
+      }
+      h->ch_Value = w;
+      break;
+
+    case CRC_CHS16_2:
+      while (n--)
+      {
+        if (w & 1)
+          w = (UWORD)((w >> 1) + 0x8000);
+        else
+          w = (UWORD)(w >> 1);
+        w = (UWORD)(w + *m++);
+      }
+      h->ch_Value = w;
+      break;
+
+    case CRC_CHS16_3:
+      while (n--)
+        v += *m++;
+      h->ch_Value = v;
+      break;
+
+    case CRC_EORB:
+      while (n--)
+        v ^= *m++;
+      h->ch_Value = v;
+      break;
+
+    case CRC_SUMSB:
+      while (n--)
+        v += (ULONG)(LONG)(BYTE)*m++;
+      h->ch_Value = v;
+      break;
+
+    case CRC_SUMUB:
+      while (n--)
+        v += *m++;
+      h->ch_Value = v;
+      break;
+
+    default:
+      break;
+  }
+}
+
+/* Word/long algorithms: buffer partial units across update boundaries. */
+static void stream_units(struct CRCHandle *h, const UBYTE *m, LONG n)
+{
+  ULONG type = h->ch_Type;
+  UWORD unit = stream_unit(type);
+  BOOL motorola;
+
+  motorola = (BOOL)(type == CRC_EORWM || type == CRC_EORLM
+    || type == CRC_SUMSWM || type == CRC_SUMUWM || type == CRC_SUMLM
+    || type == CRC_CHS32_1M);
+
+  while (n--)
+  {
+    h->ch_Part[h->ch_PartLen++] = *m++;
+    if (h->ch_PartLen == unit)
+    {
+      ULONG val;
+
+      if (unit == 2)
+      {
+        if (motorola)
+          val = ((ULONG)h->ch_Part[0] << 8) | (ULONG)h->ch_Part[1];
+        else
+          val = (ULONG)h->ch_Part[0] | ((ULONG)h->ch_Part[1] << 8);
+      }
+      else
+      {
+        if (motorola)
+          val = ((ULONG)h->ch_Part[0] << 24) | ((ULONG)h->ch_Part[1] << 16)
+            | ((ULONG)h->ch_Part[2] << 8) | (ULONG)h->ch_Part[3];
+        else
+          val = (ULONG)h->ch_Part[0] | ((ULONG)h->ch_Part[1] << 8)
+            | ((ULONG)h->ch_Part[2] << 16) | ((ULONG)h->ch_Part[3] << 24);
+      }
+
+      switch (type)
+      {
+        case CRC_EORWM: case CRC_EORWI:
+          h->ch_Value ^= (val & 0xFFFF);
+          break;
+        case CRC_EORLM: case CRC_EORLI:
+          h->ch_Value ^= val;
+          break;
+        case CRC_SUMSWM: case CRC_SUMSWI:
+          h->ch_Value += (ULONG)(LONG)(WORD)val;
+          break;
+        case CRC_SUMUWM: case CRC_SUMUWI:
+          h->ch_Value += (val & 0xFFFF);
+          break;
+        case CRC_SUMLM: case CRC_SUMLI:
+          h->ch_Value += val;
+          break;
+        case CRC_CHS32_1M: case CRC_CHS32_1I:
+        {
+          ULONG old = h->ch_Value;
+          h->ch_Value += val;
+          if (h->ch_Value < old)
+            ++h->ch_Value;
+          break;
+        }
+        default:
+          break;
+      }
+
+      h->ch_PartLen = 0;
+    }
+  }
+}
+
+/* LightFileSystem: process one 0x1600-or-shorter block exactly as one-shot. */
+static void chs32_2_block(struct CRCHandle *h, const UBYTE *buf, ULONG L)
+{
+  ULONG s = 0;
+  ULONG i;
+  ULONG k;
+
+  for (k = 0; k < L; k++)
+  {
+    i = L - k;
+    s += buf[k];
+    s = ((s << (i & 7)) | (s >> (32 - (i & 7))));
+  }
+  h->ch_Value += s;
+}
+
+static void chs32_2_update(struct CRCHandle *h, const UBYTE *m, LONG n)
+{
+  UBYTE *blk = (UBYTE *)(h + 1);
+
+  while (n--)
+  {
+    blk[h->ch_PartLen++] = *m++;
+    if (h->ch_PartLen == CHS32_2_BLOCK)
+    {
+      chs32_2_block(h, blk, CHS32_2_BLOCK);
+      h->ch_PartLen = 0;
+    }
+  }
+}
+
+ULONG
+crc_stream_tailsize(ULONG type)
+{
+  switch (type)
+  {
+    case CRC_MD5:    return crc_md5_ctxsize();
+    case CRC_SHA1:   return crc_sha1_ctxsize();
+    case CRC_SHA256: return crc_sha256_ctxsize();
+    case CRC_CHS32_2: return CHS32_2_BLOCK;
+    default:         return 0;
+  }
+}
+
+ULONG
+crc_stream_digestlen(ULONG type)
+{
+  switch (type)
+  {
+    case CRC_MD5:    return SIZEOF_MD5SUM;
+    case CRC_SHA1:   return SIZEOF_SHA1SUM;
+    case CRC_SHA256: return SIZEOF_SHA256SUM;
+    default:         return 0;
+  }
+}
+
+void
+crc_stream_init(struct CRCHandle *h)
+{
+  ULONG type = h->ch_Type;
+
+  h->ch_Value = 0;
+  h->ch_Length = 0;
+  h->ch_PartLen = 0;
+
+  switch (type)
+  {
+    case CRC_CRC32_2: case CRC_CRC32_3:
+    case CRC_CRC32_5: case CRC_CRC32_6:
+      h->ch_Value = 0xFFFFFFFFUL;
+      break;
+    case CRC_MD5:    crc_md5_init((APTR)(h + 1)); break;
+    case CRC_SHA1:   crc_sha1_init((APTR)(h + 1)); break;
+    case CRC_SHA256: crc_sha256_init((APTR)(h + 1)); break;
+    default:
+      break;
+  }
+}
+
+void
+crc_stream_update(struct CRCHandle *h, const UBYTE *Mem, LONG Size)
+{
+  ULONG type;
+
+  if (Size <= 0)
+    return;
+
+  type = h->ch_Type;
+  h->ch_Length += (ULONG)Size;
+
+  switch (type)
+  {
+    case CRC_MD5:    crc_md5_update((APTR)(h + 1), Mem, (ULONG)Size); return;
+    case CRC_SHA1:   crc_sha1_update((APTR)(h + 1), Mem, (ULONG)Size); return;
+    case CRC_SHA256: crc_sha256_update((APTR)(h + 1), Mem, (ULONG)Size); return;
+    case CRC_CHS32_2: chs32_2_update(h, Mem, Size); return;
+    default:
+      break;
+  }
+
+  if (stream_unit(type) == 1)
+    stream_bytes(h, Mem, Size);
+  else
+    stream_units(h, Mem, Size);
+}
+
+ULONG
+crc_stream_final(struct CRCHandle *h, UBYTE *Digest)
+{
+  ULONG type = h->ch_Type;
+  ULONG v;
+
+  switch (type)
+  {
+    case CRC_MD5:    crc_md5_final((APTR)(h + 1), Digest); return 0;
+    case CRC_SHA1:   crc_sha1_final((APTR)(h + 1), Digest); return 0;
+    case CRC_SHA256: crc_sha256_final((APTR)(h + 1), Digest); return 0;
+    default:
+      break;
+  }
+
+  if (type == CRC_CHS32_2)
+  {
+    if (h->ch_PartLen)
+      chs32_2_block(h, (UBYTE *)(h + 1), h->ch_PartLen);
+    return h->ch_Value;
+  }
+
+  v = h->ch_Value;
+
+  switch (type)
+  {
+    case CRC_CRC32_2: case CRC_CRC32_5:
+      return ~v;
+
+    case CRC_CRC32_4:
+    {
+      UBYTE l;
+      for (l = 1; l <= 33; l++)
+      {
+        ULONG highbit = v & 0x80000000UL;
+        v <<= 1;
+        if (highbit)
+          v ^= 0x04C11DB7UL;
+      }
+      return v;
+    }
+
+    case CRC_CRC32_7:
+    {
+      ULONG l = h->ch_Length;
+      while (l)
+      {
+        v = table32R[(v >> 24) ^ (l & 0xFF)] ^ (v << 8);
+        l >>= 8;
+      }
+      return ~v;
+    }
+
+    case CRC_CHS32_1M: case CRC_CHS32_1I:
+      return ~v;
+
+    case CRC_CHS16_3:
+      return v % 0xFFFF;
+
+    case CRC_CRC16_1: case CRC_CRC16_2: case CRC_CRC16_3: case CRC_CRC16_4:
+    case CRC_CHS16_1: case CRC_CHS16_2:
+    case CRC_EORWM: case CRC_EORWI:
+      return v & 0xFFFF;
+
+    case CRC_EORB:
+      return v & 0xFF;
+
+    default:
+      return v;
+  }
+}

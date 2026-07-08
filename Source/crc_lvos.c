@@ -272,3 +272,84 @@ DoCRC32_7(
 {
 	return crc_DoCRC32_7(Mem, Size);
 }
+
+/* Reserved LVO slots for future one-shot algorithms (v2.0). */
+
+__ASM__ __SAVE_DS__ ULONG
+CRCReserved1(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return 0;
+}
+
+__ASM__ __SAVE_DS__ ULONG
+CRCReserved2(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return 0;
+}
+
+__ASM__ __SAVE_DS__ ULONG
+CRCReserved3(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return 0;
+}
+
+__ASM__ __SAVE_DS__ ULONG
+CRCReserved4(
+	__REG__(a0, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	return 0;
+}
+
+/* Incremental (streaming) API */
+
+__ASM__ __SAVE_DS__ APTR
+CRCNew(
+	__REG__(d0, ULONG type))
+{
+	return (APTR)crc_CRCNew(type);
+}
+
+__ASM__ __SAVE_DS__ VOID
+CRCReset(
+	__REG__(a0, APTR handle))
+{
+	crc_CRCReset((struct CRCHandle *)handle);
+}
+
+__ASM__ __SAVE_DS__ VOID
+CRCUpdate(
+	__REG__(a0, APTR handle),
+	__REG__(a1, const UBYTE *Mem),
+	__REG__(d0, LONG Size))
+{
+	crc_CRCUpdate((struct CRCHandle *)handle, Mem, Size);
+}
+
+__ASM__ __SAVE_DS__ ULONG
+CRCFinal(
+	__REG__(a0, APTR handle),
+	__REG__(a1, UBYTE *Digest))
+{
+	return crc_CRCFinal((struct CRCHandle *)handle, Digest);
+}
+
+__ASM__ __SAVE_DS__ VOID
+CRCDispose(
+	__REG__(a0, APTR handle))
+{
+	crc_CRCDispose((struct CRCHandle *)handle);
+}
+
+__ASM__ __SAVE_DS__ ULONG
+CRCDigestLength(
+	__REG__(d0, ULONG type))
+{
+	return crc_CRCDigestLength(type);
+}

@@ -33,6 +33,16 @@ crc.library/DoSHA256
 crc.library/DoCHS16_2
 crc.library/DoCHS16_3
 crc.library/DoCRC32_7
+crc.library/CRCReserved1
+crc.library/CRCReserved2
+crc.library/CRCReserved3
+crc.library/CRCReserved4
+crc.library/CRCNew
+crc.library/CRCReset
+crc.library/CRCUpdate
+crc.library/CRCFinal
+crc.library/CRCDispose
+crc.library/CRCDigestLength
 crc.library/DoCRC32_1                                                 crc.library/DoCRC32_1
 
    NAME
@@ -950,3 +960,182 @@ crc.library/DoCRC32_7
 
     SEE ALSO
 	DoCRC32_1(), DoCRC32_2()
+
+crc.library/CRCReserved1                                         crc.library/CRCReserved1
+
+   NAME
+	CRCReserved1 -- reserved library vector (do not call).
+
+   SYNOPSIS
+	result = CRCReserved1( Mem, Size );
+	  d0                    a0   d0
+
+	ULONG CRCReserved1( UBYTE *, LONG );
+
+   FUNCTION
+	Reserved LVO slot for a future one-shot checksum algorithm.  Returns
+	zero.  CRCReserved2, CRCReserved3, and CRCReserved4 are identical
+	placeholders at adjacent vector offsets.  Applications must not call
+	these functions.
+
+    SEE ALSO
+	CRCNew()
+
+crc.library/CRCNew                                                       crc.library/CRCNew
+
+   NAME
+	CRCNew -- allocate an incremental checksum/digest context.
+
+   SYNOPSIS
+	handle = CRCNew( type );
+	  d0            d0
+
+	APTR CRCNew( ULONG );
+
+   FUNCTION
+	Allocates a streaming context for the algorithm selected by 'type' (one
+	of the CRC_* constants in <libraries/crc.h>).  Feed data to the context
+	with CRCUpdate() and obtain the result with CRCFinal().  The context is
+	carved from an internal exec memory pool that is created on first use;
+	the allocation is arbitrated by a semaphore, so CRCNew() may be called
+	from several tasks concurrently.
+
+	Streaming a data set in arbitrary pieces produces a bit-identical result
+	to the matching one-shot Do* function over the concatenated data.  This
+	is intended for hashing data that does not fit in memory at once, such as
+	git or Subversion pack files and large working-copy deltas.
+
+    INPUTS
+	type - algorithm selector, one of the CRC_* constants (0 ..
+	    CRC_TYPE_COUNT-1)
+
+    RESULT
+	handle - an opaque context pointer, or NULL if 'type' is out of range or
+	    memory could not be obtained
+
+    SEE ALSO
+	CRCUpdate(), CRCFinal(), CRCReset(), CRCDispose(), CRCDigestLength()
+
+crc.library/CRCReset                                                   crc.library/CRCReset
+
+   NAME
+	CRCReset -- re-initialise a context for reuse.
+
+   SYNOPSIS
+	CRCReset( handle );
+	           a0
+
+	void CRCReset( APTR );
+
+   FUNCTION
+	Returns the context to its initial state so it can be used again for a
+	fresh computation with the same algorithm.  Avoids the pool traffic of a
+	CRCDispose()/CRCNew() pair when hashing many objects in a row.
+
+    INPUTS
+	handle - a context from CRCNew() (NULL is ignored)
+
+    SEE ALSO
+	CRCNew(), CRCFinal()
+
+crc.library/CRCUpdate                                                 crc.library/CRCUpdate
+
+   NAME
+	CRCUpdate -- feed a block of data to a context.
+
+   SYNOPSIS
+	CRCUpdate( handle, Mem, Size );
+	            a0      a1   d0
+
+	void CRCUpdate( APTR, UBYTE *, LONG );
+
+   FUNCTION
+	Consumes 'Size' bytes at 'Mem', updating the running state of 'handle'.
+	May be called any number of times before CRCFinal().  A NULL handle, a
+	NULL 'Mem', or a non-positive 'Size' is ignored.
+
+    INPUTS
+	handle - a context from CRCNew()
+	Mem - pointer to the data block
+	Size - number of bytes to consume
+
+    SEE ALSO
+	CRCNew(), CRCFinal()
+
+crc.library/CRCFinal                                                   crc.library/CRCFinal
+
+   NAME
+	CRCFinal -- finish a computation and read the result.
+
+   SYNOPSIS
+	result = CRCFinal( handle, Digest );
+	  d0               a0      a1
+
+	ULONG CRCFinal( APTR, UBYTE * );
+
+   FUNCTION
+	Completes the computation for 'handle'.  For the numeric CRC and
+	checksum algorithms the value is returned in d0 and 'Digest' is ignored
+	(pass NULL).  For the digest algorithms (CRC_MD5, CRC_SHA1, CRC_SHA256)
+	the result is written to 'Digest', which must point to at least
+	CRCDigestLength(type) bytes, and the return value is zero.
+
+	After CRCFinal() the handle should not receive further CRCUpdate() calls
+	until it has been re-initialised with CRCReset().  CRCFinal() does not
+	free the handle; call CRCDispose() when finished.
+
+    INPUTS
+	handle - a context from CRCNew()
+	Digest - digest output buffer for hash algorithms, else NULL
+
+    RESULT
+	result - the numeric CRC/checksum, or zero for digest algorithms
+
+    SEE ALSO
+	CRCNew(), CRCUpdate(), CRCDigestLength()
+
+crc.library/CRCDispose                                               crc.library/CRCDispose
+
+   NAME
+	CRCDispose -- free a context.
+
+   SYNOPSIS
+	CRCDispose( handle );
+	             a0
+
+	void CRCDispose( APTR );
+
+   FUNCTION
+	Returns the context to the library pool.  A NULL handle is ignored.
+
+    INPUTS
+	handle - a context from CRCNew()
+
+    SEE ALSO
+	CRCNew()
+
+crc.library/CRCDigestLength                                     crc.library/CRCDigestLength
+
+   NAME
+	CRCDigestLength -- query the result form of an algorithm.
+
+   SYNOPSIS
+	length = CRCDigestLength( type );
+	  d0                      d0
+
+	ULONG CRCDigestLength( ULONG );
+
+   FUNCTION
+	Returns the digest length in bytes for a hash algorithm (16 for CRC_MD5,
+	20 for CRC_SHA1, 32 for CRC_SHA256), or zero for the numeric CRC and
+	checksum algorithms.  Use it to decide whether to read the CRCFinal()
+	return value (length zero) or supply a digest buffer (length non-zero).
+
+    INPUTS
+	type - algorithm selector, one of the CRC_* constants
+
+    RESULT
+	length - digest size in bytes, or zero for numeric algorithms
+
+    SEE ALSO
+	CRCFinal()

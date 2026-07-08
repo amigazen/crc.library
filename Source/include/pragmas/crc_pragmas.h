@@ -41,10 +41,21 @@
 #pragma libcall CRCBase DoSumLM B4 0802
 #pragma libcall CRCBase DoSumLI BA 0802
 #pragma libcall CRCBase DoMD5Sum C0 90803
+/*--- functions in V2 or higher --- */
 #pragma libcall CRCBase DoSHA1 C6 90803
 #pragma libcall CRCBase DoSHA256 CC 90803
 #pragma libcall CRCBase DoCHS16_2 D2 0802
 #pragma libcall CRCBase DoCHS16_3 D8 0802
 #pragma libcall CRCBase DoCRC32_7 DE 0802
+#pragma libcall CRCBase CRCReserved1 E4 0802
+#pragma libcall CRCBase CRCReserved2 EA 0802
+#pragma libcall CRCBase CRCReserved3 F0 0802
+#pragma libcall CRCBase CRCReserved4 F6 0802
+#pragma libcall CRCBase CRCNew FC 001
+#pragma libcall CRCBase CRCReset 102 801
+#pragma libcall CRCBase CRCUpdate 108 09803
+#pragma libcall CRCBase CRCFinal 10E 9802
+#pragma libcall CRCBase CRCDispose 114 801
+#pragma libcall CRCBase CRCDigestLength 11A 001
 
 #endif /* PRAGMAS_CRC_PRAGMAS_H */

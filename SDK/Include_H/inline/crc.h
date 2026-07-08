@@ -337,5 +337,56 @@
 	r;   \
 })
 
+#define CRCNew(type)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register ULONG p0 __asm("d0") = (type);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-252:W);" : "+r"(b), "=r"(r) : "r"(p0) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
+#define CRCReset(handle)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register APTR p0 __asm("a0") = (handle);   \
+	__asm volatile ("jsr a6@(-258:W);" : "+r"(b) : "r"(p0) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+})
+
+#define CRCUpdate(handle, Mem, Size)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register APTR p0 __asm("a0") = (handle);   \
+	register UBYTE *p1 __asm("a1") = (Mem);   \
+	register LONG p2 __asm("d0") = (Size);   \
+	__asm volatile ("jsr a6@(-264:W);" : "+r"(b) : "r"(p0), "r"(p1), "r"(p2) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+})
+
+#define CRCFinal(handle, Digest)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register APTR p0 __asm("a0") = (handle);   \
+	register UBYTE *p1 __asm("a1") = (Digest);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-270:W);" : "+r"(b), "=r"(r) : "r"(p0), "r"(p1) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
+#define CRCDispose(handle)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register APTR p0 __asm("a0") = (handle);   \
+	__asm volatile ("jsr a6@(-276:W);" : "+r"(b) : "r"(p0) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+})
+
+#define CRCDigestLength(type)    \
+({  \
+	register void *b __asm("a6") = CRCBase;  \
+	register ULONG p0 __asm("d0") = (type);   \
+	register APTR r __asm("d0");   \
+	__asm volatile ("jsr a6@(-282:W);" : "+r"(b), "=r"(r) : "r"(p0) : "d0", "d1", "a0", "a1", "fp0", "fp1", "cc", "memory");    \
+	r;   \
+})
+
 
 #endif /* INLINE_CRC_H */

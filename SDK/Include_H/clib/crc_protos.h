@@ -51,6 +51,16 @@ void DoSHA256(UBYTE *Mem, LONG Size, UBYTE *Digest);
 UWORD DoCHS16_2(UBYTE *Mem, LONG Size);
 UWORD DoCHS16_3(UBYTE *Mem, LONG Size);
 ULONG DoCRC32_7(UBYTE *Mem, LONG Size);
+ULONG CRCReserved1(UBYTE *Mem, LONG Size);
+ULONG CRCReserved2(UBYTE *Mem, LONG Size);
+ULONG CRCReserved3(UBYTE *Mem, LONG Size);
+ULONG CRCReserved4(UBYTE *Mem, LONG Size);
+APTR CRCNew(ULONG type);
+void CRCReset(APTR handle);
+void CRCUpdate(APTR handle, UBYTE *Mem, LONG Size);
+ULONG CRCFinal(APTR handle, UBYTE *Digest);
+void CRCDispose(APTR handle);
+ULONG CRCDigestLength(ULONG type);
 
 #ifdef __cplusplus
 }

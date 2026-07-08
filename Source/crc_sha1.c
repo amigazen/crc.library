@@ -194,3 +194,11 @@ crc_DoSHA1(const UBYTE *Mem, LONG Size, UBYTE Digest[SIZEOF_SHA1SUM])
   sha1_update(&ctx, Mem, (ULONG)Size);
   sha1_final(&ctx, Digest);
 }
+
+/* Opaque sub-context wrappers for the streaming API. */
+ULONG crc_sha1_ctxsize(void) { return (ULONG)sizeof(struct SHA1Context); }
+void crc_sha1_init(APTR ctx) { sha1_init((struct SHA1Context *)ctx); }
+void crc_sha1_update(APTR ctx, const UBYTE *data, ULONG len)
+  { sha1_update((struct SHA1Context *)ctx, data, len); }
+void crc_sha1_final(APTR ctx, UBYTE *digest)
+  { sha1_final((struct SHA1Context *)ctx, digest); }

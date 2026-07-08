@@ -312,6 +312,69 @@ int main(void)
 	check_ulong("CRC32-7", 0x08B5EFEBUL, DoCRC32_7(v, test_len));
 	suite_end();
 
+	/*
+	 * Incremental (streaming) API.  Each streamed result must match the
+	 * corresponding one-shot call over the same data.
+	 */
+	suite_begin("CRCDigestLength reports correct sizes");
+	check_ulong("len(CRC32_2)", 0UL, CRCDigestLength(CRC_CRC32_2));
+	check_ulong("len(MD5)", (ULONG)SIZEOF_MD5SUM, CRCDigestLength(CRC_MD5));
+	check_ulong("len(SHA1)", (ULONG)SIZEOF_SHA1SUM, CRCDigestLength(CRC_SHA1));
+	check_ulong("len(SHA256)", (ULONG)SIZEOF_SHA256SUM, CRCDigestLength(CRC_SHA256));
+	suite_end();
+
+	suite_begin("Streaming CRC32_2 (byte-at-a-time) == one-shot");
+	{
+		APTR h;
+		ULONG streamed;
+		LONG i;
+
+		streamed = 0;
+		h = CRCNew(CRC_CRC32_2);
+		if (h == NULL)
+		{
+			printf("  FAIL: CRCNew returned NULL\n");
+			suite_fail = TRUE;
+		}
+		else
+		{
+			for (i = 0; i < test_len; i++)
+				CRCUpdate(h, v + i, 1);
+			streamed = CRCFinal(h, NULL);
+			CRCDispose(h);
+			check_ulong("CRC32-2", DoCRC32_2(v, test_len), streamed);
+		}
+	}
+	suite_end();
+
+	suite_begin("Streaming SHA256 \"abc\" one byte at a time == vector");
+	{
+		APTR h;
+
+		h = CRCNew(CRC_SHA256);
+		if (h == NULL)
+		{
+			printf("  FAIL: CRCNew returned NULL\n");
+			suite_fail = TRUE;
+		}
+		else
+		{
+			CRCUpdate(h, (UBYTE *)test_abc, 1);
+			CRCUpdate(h, (UBYTE *)test_abc + 1, 1);
+			CRCUpdate(h, (UBYTE *)test_abc + 2, 1);
+			(void)CRCFinal(h, sha256);
+			check_digest("SHA256", sha256_abc, sha256, SIZEOF_SHA256SUM);
+
+			/* Re-use the same handle after CRCReset. */
+			CRCReset(h);
+			CRCUpdate(h, (UBYTE *)test_abc, test_abc_len);
+			(void)CRCFinal(h, sha256);
+			check_digest("SHA256 after reset", sha256_abc, sha256, SIZEOF_SHA256SUM);
+			CRCDispose(h);
+		}
+	}
+	suite_end();
+
 	CloseLibrary(CRCBase);
 	CRCBase = NULL;
 
