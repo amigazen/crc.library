@@ -63,7 +63,7 @@ struct CRCLibBase
  * Streaming context.  Allocated from the library pool by CRCNew().  A
  * type-specific tail follows the header in the same allocation: nothing for
  * the plain CRC/checksum types, a digest sub-context for the hash types, or a
- * block buffer for the block-structured LightFileSystem checksum.
+ * block buffer for the block-structured DoCHS32_2 checksum.
  */
 struct CRCHandle
 {

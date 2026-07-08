@@ -329,7 +329,6 @@ crc.library/CRCDigestLength
 	Computes Olaf Barthel's 32-bit WRAP checksum over 32-bit big-endian
 	(Motorola) longwords. A carry that wraps past 0xFFFFFFFF increments the
 	result by one. The final value is one's-complemented before return.
-	Used by FFS boot blocks and related formats.
 
     INPUTS
 	Mem - pointer to the first byte of the data block
@@ -378,7 +377,7 @@ crc.library/CRCDigestLength
 crc.library/DoCHS32_2                                                 crc.library/DoCHS32_2
 
    NAME
-	DoCHS32_2 -- compute a LightFileSystem 32-bit checksum.
+	DoCHS32_2 -- compute a 32-bit block checksum.
 
    SYNOPSIS
 	sum = DoCHS32_2( Mem, Size );
@@ -387,10 +386,9 @@ crc.library/CRCDigestLength
 	ULONG DoCHS32_2( UBYTE *, LONG );
 
    FUNCTION
-	Computes the LightFileSystem checksum. Data is processed in blocks of up
-	to 0x1600 bytes. Within each block bytes are summed and the running sum
-	is left-rotated once per byte before the block total is added to the
-	overall result.
+	Computes a 32-bit checksum in blocks of up to 0x1600 bytes. Within each
+	block bytes are summed and the running sum is left-rotated once per byte
+	before the block total is added to the overall result.
 
     INPUTS
 	Mem - pointer to the first byte of the data block

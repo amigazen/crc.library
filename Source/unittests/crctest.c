@@ -221,7 +221,7 @@ int main(void)
 	check_ulong("CHS32-1I", 0x87A9CBEDUL, DoCHS32_1I(v, test_len));
 	suite_end();
 
-	suite_begin("DoCHS32_2 (LightFileSystem)");
+	suite_begin("DoCHS32_2 (32-bit block checksum)");
 	check_ulong("CHS32-2", 0x000058A0UL, DoCHS32_2(v, test_len));
 	suite_end();
 

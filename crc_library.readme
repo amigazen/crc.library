@@ -1,0 +1,124 @@
+Short:        crc.library 2.0 - checksum and digest library for Amiga
+Author:       toolkit@amigazen.com (amigazen project)
+Uploader:     toolkit@amigazen.com (amigazen project)
+Type:         util/libs
+Version:      2.0
+Architecture: m68k-amigaos
+
+
+crc.library 2.0
+===============
+
+crc.library is a shared library for classic Amiga from amigazen project.
+It provides CRC, checksum, sum, XOR, and message-digest routines used by
+archivers, filesystem tools, and version-control clients.
+
+Full source code is available at:
+
+  https://github.com/amigazen/crc/
+
+crc.library from amigazen project also available at:
+
+  http://www.amigazen.com/toolkit/
+
+amigazen project uses modern development practices to maintain and
+rerelease classic Amiga open-source software.
+
+The original crc.library author (Jim Sunrise) and GetCRC author (Dirk
+Stoecker) are not affiliated with amigazen; terms are in LICENSE.md in
+the source distribution.
+
+
+READ THIS FIRST
+---------------
+
+ o LVOs 1-28 are binary-compatible with Jim Sunrise's crc.library v1.0
+   (October 2006). Existing binaries can still OpenLibrary("crc.library", 1).
+
+ o New functions in 2.0 are include SHA-1/SHA-256, POSIX sums, and streaming
+
+ o md5sum was renamed DoMD5Sum at the same LVO offset (-192). The legacy
+   name is available as a macro in libraries/crc.h for source compatibility.
+
+
+WHAT crc.library IS FOR
+-----------------------
+
+Programs that need to verify data integrity or identify archive formats
+without embedding their own table-driven checksum code:
+
+ o Archivers and unpackers (Zip/GZip CRC-32, Arc/LhA CRC-16, BZip2, Ace)
+
+ o File managers verifying on-disk structures
+
+ o Git and Subversion clients (SHA-1, SHA-256, MD5)
+
+ o Any tool that needs BSD sum, SYSV sum, or POSIX cksum
+
+
+NEW IN crc.library 2.0
+----------------------
+
+ o Incremental (streaming) API for data larger than available RAM:
+   CRCNew, CRCReset, CRCUpdate, CRCFinal, CRCDispose, CRCDigestLength
+   Streamed output is bit-identical to the matching one-shot Do* call
+
+ o 33 CRC_* algorithm selectors in libraries/crc.h (one per algorithm)
+
+ o Message digests useful for version control programs:
+   DoSHA1 (git object hashing), DoSHA256, DoMD5Sum (Subversion deltas)
+
+ o POSIX / Unix checksums from GetCRC 1.19:
+   DoCHS16_2 (BSD sum), DoCHS16_3 (SYSV sum), DoCRC32_7 (POSIX cksum)
+
+ o Lazy exec memory pool for streaming contexts; CRCNew/CRCDispose are
+   semaphore-protected; per-handle CRCUpdate needs no locking
+
+ o Four reserved LVO slots before the streaming block for future growth
+
+ o Expanded autodocs (SDK/Autodocs/crc.doc)
+
+
+ONE-SHOT ALGORITHMS (v1.0 + v2.0)
+---------------------------------
+
+CRC-32 variants:  DoCRC32_1 .. DoCRC32_7
+CRC-16 variants:  DoCRC16_1 .. DoCRC16_4
+Checksums:        DoCHS32_1M, DoCHS32_1I, DoCHS32_2, DoCHS16_1,
+                  DoCHS16_2, DoCHS16_3
+XOR reduction:    DoEORB, DoEORWM, DoEORWI, DoEORLM, DoEORLI
+Sums:             DoSumSB, DoSumSWM, DoSumSWI, DoSumUB, DoSumUWM,
+                  DoSumUWI, DoSumLM, DoSumLI
+Digests:          DoMD5Sum, DoSHA1, DoSHA256
+
+
+STREAMING EXAMPLE
+-----------------
+
+  APTR h = CRCNew(CRC_SHA256);
+  while ((len = Read(fh, buf, sizeof buf)) > 0)
+      CRCUpdate(h, buf, len);
+  CRCFinal(h, digest);
+  CRCDispose(h);
+
+CONTACT
+-------
+
+ GitHub:  https://github.com/amigazen/crc/
+ Web:     http://www.amigazen.com/
+ Email:   toolkit@amigazen.com
+
+
+COPYRIGHT
+---------
+
+Checksum algorithm cores are from GetCRC by Dirk St�cker (public domain).
+
+crc.library v1.0 was ported by Jim Sunrise (2006, public domain).
+
+Changes Copyright (c) 2026 by amigazen project. Library infrastructure,
+build system, streaming API, and SDK are under BSD 2-Clause License terms.
+
+See LICENSE.md in the source code distribution.
+
+SHA-1/SHA-256 engine cores adapt Brad Conte's public-domain implementations.

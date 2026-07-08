@@ -14,6 +14,14 @@
 #include <exec/types.h>
 #endif
 
+/* 
+ * DoMD5Sum was previously named md5sum in the 1.0 release; this provides a 
+ * compatibility macro for the legacy name. 
+ */
+#ifndef md5sum
+#define md5sum DoMD5Sum
+#endif
+
 /*
  * Digest buffer sizes (bytes).  Pass a buffer of at least the matching size
  * to DoMD5Sum/DoSHA1/DoSHA256 and to CRCFinal() for digest algorithms.
@@ -45,7 +53,7 @@
 #define CRC_CRC16_4    10	/* old Zoom, CompDisk                         */
 #define CRC_CHS32_1M   11	/* WRAP checksum, Motorola order              */
 #define CRC_CHS32_1I   12	/* WRAP checksum, Intel order                 */
-#define CRC_CHS32_2    13	/* LightFileSystem                            */
+#define CRC_CHS32_2    13	/* 32-bit block checksum (0x1600 blocks)      */
 #define CRC_CHS16_1    14	/* PowerPacker passwords                      */
 #define CRC_CHS16_2    15	/* BSD sum                                    */
 #define CRC_CHS16_3    16	/* SYSV sum                                   */
