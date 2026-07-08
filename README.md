@@ -1,6 +1,6 @@
 # crc.library
 
-crc.library is a shared library for AmigaOS 3.x from **amigazen project**. It provides CRC, checksum, sum, XOR, and message-digest routines for archivers, file managers, and version-control clients — Zip and GZip CRC-32, Arc CRC-16, 32-bit WRAP checksums, PowerPacker passwords, BSD/SYSV `sum`, POSIX `cksum`, MD5, SHA-1, SHA-256, and related variants — without copying table-driven code into every application.
+crc.library is a shared library for Amiga from **amigazen project**. It provides CRC, checksum, sum, XOR, and message-digest routines for archivers, file managers, and version-control clients — Zip and GZip CRC-32, Arc CRC-16, 32-bit WRAP checksums, PowerPacker passwords, BSD/SYSV `sum`, POSIX `cksum`, MD5, SHA-1, SHA-256, and related variants — without copying table-driven code into every application.
 
 **One-shot** callers pass a buffer and length to a `Do*` function (for example `DoCRC32_2(Mem, Size)`) and read the result from the trap. **Streaming** callers use `CRCNew`, `CRCUpdate`, `CRCFinal`, and `CRCDispose` when data arrives in chunks from disk or a pack file; the streamed result matches the corresponding one-shot call over the same bytes. The public API has **43** LVOs in four groups: archive/filesystem CRCs, sums and POSIX utilities, git/Subversion digests, and streaming plus four reserved slots for future one-shot algorithms.
 
