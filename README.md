@@ -36,7 +36,7 @@ The checksum implementations in this tree trace to two earlier projects:
 
 | Version | Maintainer | Notes |
 |---------|------------|-------|
-| 1.1 | amigazen project | ToolKit build: SFD/NDK headers, engine module split, `CRCTest`, no `sc.lib` in the library |
+| 1.1 | amigazen project | ToolKit build: SFD/NDK headers, engine module split, `CRCTest`, replaced all C library functions with Amiga native equivalents |
 | **2.0** | amigazen project | `DoSHA1`/`DoSHA256`, POSIX sums, streaming API, exec memory pool, four reserved LVOs; **43** public functions |
 
 Version 2.0 appends new LVOs - existing binaries built against Jim Sunrise's 1.0 still work with `OpenLibrary("crc.library", 1)`.
