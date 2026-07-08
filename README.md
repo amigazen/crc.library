@@ -1,6 +1,6 @@
 # crc.library
 
-crc.library is a shared library for AmigaOS 3.x from the **amigazen project**. It provides CRC, checksum, sum, XOR, and message-digest routines for archivers, file managers, and version-control clients — Zip and GZip CRC-32, Arc CRC-16, 32-bit WRAP checksums, PowerPacker passwords, BSD/SYSV `sum`, POSIX `cksum`, MD5, SHA-1, SHA-256, and related variants — without copying table-driven code into every application.
+crc.library is a shared library for AmigaOS 3.x from **amigazen project**. It provides CRC, checksum, sum, XOR, and message-digest routines for archivers, file managers, and version-control clients — Zip and GZip CRC-32, Arc CRC-16, 32-bit WRAP checksums, PowerPacker passwords, BSD/SYSV `sum`, POSIX `cksum`, MD5, SHA-1, SHA-256, and related variants — without copying table-driven code into every application.
 
 **One-shot** callers pass a buffer and length to a `Do*` function (for example `DoCRC32_2(Mem, Size)`) and read the result from the trap. **Streaming** callers use `CRCNew`, `CRCUpdate`, `CRCFinal`, and `CRCDispose` when data arrives in chunks from disk or a pack file; the streamed result matches the corresponding one-shot call over the same bytes. The public API has **43** LVOs in four groups: archive/filesystem CRCs, sums and POSIX utilities, git/Subversion digests, and streaming plus four reserved slots for future one-shot algorithms.
 
@@ -16,7 +16,7 @@ Algorithm cores are from **Dirk Stoecker's GetCRC** utility (public domain); the
 
 **amigazen project** is using modern software development tools and methods to update and rerelease classic Amiga open source software. Projects include a new AWeb, a new Amiga Python 2, and the ToolKit project — a universal SDK for Amiga development. All *amigazen project* releases are guaranteed to build against the ToolKit standard so that anyone can download and begin contributing straightaway without having to tailor the toolchain for their own setup.
 
-This **2.0** release is still Jim Sunrise's library port of Dirk Stoecker's GetCRC algorithms, refactored for NDK 3.2 and ToolKit by the amigazen project. The core checksum implementations remain those of GetCRC (public domain); the Amiga library layers (startup, SFD, pool, tests) are redistributed under the BSD 2-Clause License (see [LICENSE.md](LICENSE.md)).
+This **2.0** release is still Jim Sunrise's library port of Dirk Stoecker's GetCRC algorithms, refactored for NDK 3.2 and ToolKit by amigazen project. The core checksum implementations remain those of GetCRC (public domain); the Amiga library layers (startup, SFD, pool, tests) are redistributed under the BSD 2-Clause License (see [LICENSE.md](LICENSE.md)).
 
 The amigazen project philosophy is based on openness:
 

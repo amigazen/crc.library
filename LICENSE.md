@@ -68,6 +68,6 @@ The following are under **BSD 2-Clause** (this file):
   for the ToolKit workflow (crc.library v1.1, 2026)
 
 Redistribution of this **combined work** should credit the original authors
-above and comply with the BSD 2-Clause terms for the amigazen additions.
+above and comply with the BSD 2-Clause terms for amigazen project additions.
 
 ---
