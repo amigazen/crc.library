@@ -20,8 +20,6 @@
 #include <dos/dosextens.h>
 #include <dos/rdargs.h>
 
-#include <string.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/utility.h>
@@ -70,6 +68,52 @@ static const char *key_files[] =
 
 static const char hexchars[] = "0123456789abcdef";
 
+static int hexval(char c)
+{
+	if (c >= '0' && c <= '9')
+		return (int)(c - '0');
+	if (c >= 'a' && c <= 'f')
+		return (int)(c - 'a' + 10);
+	if (c >= 'A' && c <= 'F')
+		return (int)(c - 'A' + 10);
+	return -1;
+}
+
+static BOOL is_dot_entry(const char *name)
+{
+	if (name[0] == '.' && name[1] == '\0')
+		return TRUE;
+	if (name[0] == '.' && name[1] == '.' && name[2] == '\0')
+		return TRUE;
+	return FALSE;
+}
+
+static BOOL digest_equal(const UBYTE *a, const UBYTE *b, LONG len)
+{
+	LONG i;
+
+	for (i = 0; i < len; i++)
+	{
+		if (a[i] != b[i])
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static BOOL hex_token_valid(const char *hex, LONG expect_chars)
+{
+	LONG i;
+
+	for (i = 0; i < expect_chars; i++)
+	{
+		if (hexval(hex[i]) < 0)
+			return FALSE;
+	}
+	if (hex[expect_chars] != '\0')
+		return FALSE;
+	return TRUE;
+}
+
 static void digest_to_hex(char *out, const UBYTE *data, LONG len)
 {
 	LONG i;
@@ -94,6 +138,7 @@ static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
 	LONG r;
 	ULONG total;
 
+	/* Streaming SHA-256 via crc.library (CRCNew/CRCUpdate/CRCFinal). */
 	fh = 0;
 	h = NULL;
 	buf = NULL;
@@ -167,10 +212,7 @@ static BOOL examine_file(const char *path, LONG *prot_out, char *comment_out)
 		if (prot_out != NULL)
 			*prot_out = fib->fib_Protection;
 		if (comment_out != NULL)
-		{
-			strncpy(comment_out, (const char *)fib->fib_Comment, 79);
-			comment_out[79] = '\0';
-		}
+			Strncpy(comment_out, (STRPTR)fib->fib_Comment, 80);
 		ok = TRUE;
 	}
 
@@ -231,9 +273,8 @@ static BOOL seal_index_file(const char *path, BPTR report)
 
 	digest_to_hex(hex, digest, SIZEOF_SHA256SUM);
 
-	strncpy(comment, INDEX_COMMENT_PREFIX, sizeof(comment) - 1);
-	comment[sizeof(comment) - 1] = '\0';
-	strncat(comment, hex, sizeof(comment) - strlen(comment) - 1);
+	Strncpy(comment, (STRPTR)INDEX_COMMENT_PREFIX, sizeof(comment));
+	Strncat(comment, (STRPTR)hex, sizeof(comment));
 
 	if (!SetComment((STRPTR)path, (STRPTR)comment))
 	{
@@ -294,8 +335,7 @@ static LONG check_index_seal(const char *path, BPTR report)
 		goto done;
 
 	prot = fib->fib_Protection;
-	strncpy(comment, (const char *)fib->fib_Comment, 79);
-	comment[79] = '\0';
+	Strncpy(comment, (STRPTR)fib->fib_Comment, 80);
 
 	if (!hash_file_sha256(path, digest, NULL))
 		goto done;
@@ -313,9 +353,8 @@ static LONG check_index_seal(const char *path, BPTR report)
 
 	digest_to_hex(hex, digest, SIZEOF_SHA256SUM);
 
-	strncpy(expect, INDEX_COMMENT_PREFIX, sizeof(expect) - 1);
-	expect[sizeof(expect) - 1] = '\0';
-	strncat(expect, hex, sizeof(expect) - strlen(expect) - 1);
+	Strncpy(expect, (STRPTR)INDEX_COMMENT_PREFIX, sizeof(expect));
+	Strncat(expect, (STRPTR)hex, sizeof(expect));
 
 	if (comment[0] == '\0')
 	{
@@ -436,9 +475,7 @@ static BOOL scan_dir(const char *dirpath, BPTR index_out, BPTR progress,
 			break;
 		}
 
-		fullpath[0] = '\0';
-		strncpy(fullpath, dirpath, sizeof(fullpath) - 1);
-		fullpath[sizeof(fullpath) - 1] = '\0';
+		Strncpy(fullpath, (STRPTR)dirpath, sizeof(fullpath));
 
 		if (!AddPart(fullpath, fib->fib_FileName, (LONG)sizeof(fullpath)))
 		{
@@ -450,7 +487,7 @@ static BOOL scan_dir(const char *dirpath, BPTR index_out, BPTR progress,
 
 		if (fib->fib_DirEntryType > 0)
 		{
-			if (strcmp(fib->fib_FileName, ".") == 0 || strcmp(fib->fib_FileName, "..") == 0)
+			if (is_dot_entry(fib->fib_FileName))
 				continue;
 			if (!scan_dir(fullpath, index_out, progress, verbose, stats))
 			{
@@ -496,9 +533,7 @@ static BOOL scan_selective(const char *root, BPTR index_out, BPTR progress,
 
 	for (i = 0; key_dirs[i] != NULL; i++)
 	{
-		path[0] = '\0';
-		strncpy(path, root, sizeof(path) - 1);
-		path[sizeof(path) - 1] = '\0';
+		Strncpy(path, (STRPTR)root, sizeof(path));
 
 		if (!AddPart(path, (STRPTR)key_dirs[i], (LONG)sizeof(path)))
 			continue;
@@ -516,9 +551,7 @@ static BOOL scan_selective(const char *root, BPTR index_out, BPTR progress,
 
 	for (i = 0; key_files[i] != NULL; i++)
 	{
-		path[0] = '\0';
-		strncpy(path, root, sizeof(path) - 1);
-		path[sizeof(path) - 1] = '\0';
+		Strncpy(path, (STRPTR)root, sizeof(path));
 
 		if (!AddPart(path, (STRPTR)key_files[i], (LONG)sizeof(path)))
 			continue;
@@ -533,17 +566,6 @@ static BOOL scan_selective(const char *root, BPTR index_out, BPTR progress,
 	}
 
 	return ok;
-}
-
-static int hexval(char c)
-{
-	if (c >= '0' && c <= '9')
-		return (int)(c - '0');
-	if (c >= 'a' && c <= 'f')
-		return (int)(c - 'a' + 10);
-	if (c >= 'A' && c <= 'F')
-		return (int)(c - 'A' + 10);
-	return -1;
 }
 
 static BOOL hex_to_digest(UBYTE *out, const char *hex, LONG outlen)
@@ -580,14 +602,23 @@ static char *next_token(char *p)
 
 static void trim_eol(char *s)
 {
-	LONG n;
+	char *p;
 
-	n = (LONG)strlen(s);
-	while (n > 0 && (s[n - 1] == '\n' || s[n - 1] == '\r'))
+	p = s;
+	while (*p != '\0')
+		p++;
+	while (p > s && (p[-1] == '\n' || p[-1] == '\r'))
 	{
-		s[n - 1] = '\0';
-		n--;
+		p--;
+		*p = '\0';
 	}
+}
+
+static void report_corrupt_line(BPTR report, LONG lineno, const char *line)
+{
+	if (report == 0)
+		return;
+	FPrintf(report, "CORRUPT line %ld: %s\n", lineno, (LONG)line);
 }
 
 static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
@@ -595,13 +626,20 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 {
 	BPTR in;
 	char line[768];
+	char line_copy[768];
 	LONG bad;
+	LONG corrupt;
+	LONG file_bad;
 	LONG total;
+	LONG lineno;
 	ULONG io_err;
 
 	in = 0;
 	bad = 0;
+	corrupt = 0;
+	file_bad = 0;
 	total = 0;
+	lineno = 0;
 	io_err = 0;
 
 	in = Open((STRPTR)indexfile, MODE_OLDFILE);
@@ -630,7 +668,7 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 	Close(in);
 	in = 0;
 
-	bad += check_index_seal(indexfile, report_out);
+	bad = check_index_seal(indexfile, report_out);
 
 	in = Open((STRPTR)indexfile, MODE_OLDFILE);
 	if (in == 0)
@@ -657,6 +695,7 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 		ULONG actual_size;
 		LONG size_long;
 
+		lineno++;
 		trim_eol(line);
 		p = skip_ws(line);
 		if (*p == '\0')
@@ -666,47 +705,95 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 		if (p[0] == '!' && (p[1] == ' ' || p[1] == '\t'))
 			continue;
 
+		Strncpy(line_copy, (STRPTR)line, sizeof(line_copy));
+
 		t0 = p;
 		p = next_token(p);
 		if (*p == '\0')
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		*p++ = '\0';
 
 		p = skip_ws(p);
 		t1 = p;
 		p = next_token(p);
 		if (*p == '\0')
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		*p++ = '\0';
 
 		p = skip_ws(p);
 		t2 = p;
 		p = next_token(p);
 		if (*p == '\0')
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		*p++ = '\0';
 
 		path = skip_ws(p);
 		if (*path == '\0')
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 
 		if (Stricmp((STRPTR)t0, (STRPTR)"sha256") != 0)
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
-		if ((LONG)strlen(t1) != (SIZEOF_SHA256SUM * 2))
+		}
+		if (!hex_token_valid(t1, SIZEOF_SHA256SUM * 2))
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		if (!hex_to_digest(expect_digest, t1, SIZEOF_SHA256SUM))
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 
 		size_long = 0;
 		if (StrToLong((STRPTR)t2, &size_long) == -1)
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		if (size_long < 0)
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
 			continue;
+		}
 		expect_size = (ULONG)size_long;
 
 		total++;
 		if (!hash_file_sha256(path, actual_digest, &actual_size))
 		{
+			file_bad++;
 			bad++;
 			FPrintf(report_out, "MISSING %s\n", (LONG)path);
 			continue;
@@ -714,13 +801,15 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 
 		if (actual_size != expect_size)
 		{
+			file_bad++;
 			bad++;
 			FPrintf(report_out, "SIZE %lu!=%lu %s\n", actual_size, expect_size, (LONG)path);
 			continue;
 		}
 
-		if (memcmp(actual_digest, expect_digest, SIZEOF_SHA256SUM) != 0)
+		if (!digest_equal(actual_digest, expect_digest, SIZEOF_SHA256SUM))
 		{
+			file_bad++;
 			bad++;
 			digest_to_hex(actual_hex, actual_digest, SIZEOF_SHA256SUM);
 			FPrintf(report_out, "HASH %s %s\n", (LONG)actual_hex, (LONG)path);
@@ -733,7 +822,7 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 
 	Close(in);
 
-	if (total == 0)
+	if (total == 0 && corrupt == 0)
 	{
 		FPrintf(report_out, "Index file '%s' contains no entries.\n"
 			"Run 'CheckSys SCAN' to build a baseline index first.\n",
@@ -743,7 +832,17 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 		return FALSE;
 	}
 
-	FPrintf(report_out, "Checked %ld files, %ld problems\n", total, bad);
+	if (total == 0 && corrupt != 0)
+	{
+		FPrintf(report_out, "Index file '%s' has %ld corrupt lines, no valid entries.\n",
+			(LONG)indexfile, corrupt);
+		if (bad_out != NULL)
+			*bad_out = bad;
+		return FALSE;
+	}
+
+	FPrintf(report_out, "Checked %ld files, %ld file problems, %ld corrupt lines\n",
+		total, file_bad, corrupt);
 
 	if (bad_out != NULL)
 		*bad_out = bad;
