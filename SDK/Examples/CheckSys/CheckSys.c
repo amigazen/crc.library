@@ -9,6 +9,9 @@
  * - This is an example program, not a security boundary. If the baseline
  *   index lives on the same volume being checked, it can be modified too.
  * - Uses dos.library directory walking (Examine/ExNext) for portability.
+ * - After SCAN the index is sealed: SHA-256 stored in the file comment via
+ *   SetComment(), then write-protected with SetProtection() (see dos.library
+ *   autodocs). CHECK warns if the index is writable or the comment mismatches.
  */
 
 #include <exec/types.h>
@@ -28,6 +31,7 @@
 
 #define INDEX_FILENAME "CheckSys.idx"
 #define READ_BUFSIZE   8192
+#define INDEX_COMMENT_PREFIX "CheckSys:"
 
 #define TEMPLATE "SCAN/S,CHECK/S,FULL/S,ROOT/K,INDEX/K,VERBOSE/S,HELP/S"
 
@@ -135,6 +139,213 @@ static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
 
 	/* Read() returns -1 on error. */
 	return (BOOL)(r >= 0);
+}
+
+/*
+ * Examine a file or directory for protection bits and comment string.
+ */
+static BOOL examine_file(const char *path, LONG *prot_out, char *comment_out)
+{
+	BPTR lock;
+	struct FileInfoBlock *fib;
+	BOOL ok;
+
+	lock = 0;
+	fib = NULL;
+	ok = FALSE;
+
+	lock = Lock((STRPTR)path, SHARED_LOCK);
+	if (lock == 0)
+		return FALSE;
+
+	fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+	if (fib == NULL)
+		goto done;
+
+	if (Examine(lock, fib))
+	{
+		if (prot_out != NULL)
+			*prot_out = fib->fib_Protection;
+		if (comment_out != NULL)
+		{
+			strncpy(comment_out, (const char *)fib->fib_Comment, 79);
+			comment_out[79] = '\0';
+		}
+		ok = TRUE;
+	}
+
+done:
+	if (fib != NULL)
+		FreeDosObject(DOS_FIB, fib);
+	if (lock != 0)
+		UnLock(lock);
+
+	return ok;
+}
+
+/*
+ * Clear write protection so an existing index can be rebuilt.
+ * Low-active FIBF_WRITE: bit set means write-protected (read-only).
+ */
+static BOOL prepare_index_for_write(const char *path, BPTR report)
+{
+	LONG prot;
+
+	if (!examine_file(path, &prot, NULL))
+		return TRUE;
+
+	if ((prot & FIBF_WRITE) == 0)
+		return TRUE;
+
+	if (!SetProtection((STRPTR)path, prot & ~FIBF_WRITE))
+	{
+		if (report != 0)
+			PrintFault(IoErr(), (STRPTR)"CheckSys");
+		return FALSE;
+	}
+
+	if (report != 0)
+		FPrintf(report, "Cleared write protection on %s for rebuild\n", (LONG)path);
+
+	return TRUE;
+}
+
+/*
+ * Hash the index, store digest in the file comment, then write-protect it.
+ */
+static BOOL seal_index_file(const char *path, BPTR report)
+{
+	UBYTE digest[SIZEOF_SHA256SUM];
+	char hex[SIZEOF_SHA256SUM * 2 + 1];
+	char comment[80];
+	LONG prot;
+
+	prot = 0;
+
+	if (!hash_file_sha256(path, digest, NULL))
+	{
+		if (report != 0)
+			FPrintf(report, "Cannot hash index file '%s' for sealing.\n", (LONG)path);
+		return FALSE;
+	}
+
+	digest_to_hex(hex, digest, SIZEOF_SHA256SUM);
+
+	strncpy(comment, INDEX_COMMENT_PREFIX, sizeof(comment) - 1);
+	comment[sizeof(comment) - 1] = '\0';
+	strncat(comment, hex, sizeof(comment) - strlen(comment) - 1);
+
+	if (!SetComment((STRPTR)path, (STRPTR)comment))
+	{
+		if (report != 0)
+			PrintFault(IoErr(), (STRPTR)"CheckSys");
+		return FALSE;
+	}
+
+	(void)examine_file(path, &prot, NULL);
+
+	if (!SetProtection((STRPTR)path, prot | FIBF_WRITE))
+	{
+		if (report != 0)
+			PrintFault(IoErr(), (STRPTR)"CheckSys");
+		return FALSE;
+	}
+
+	if (report != 0)
+		FPrintf(report, "Sealed %s (write-protected, integrity comment set)\n", (LONG)path);
+
+	return TRUE;
+}
+
+/*
+ * On CHECK: warn if index is writable; verify comment matches file SHA-256.
+ * Caller must ensure the index file exists (Open succeeded).
+ */
+static LONG check_index_seal(const char *path, BPTR report)
+{
+	LONG problems;
+	LONG prot;
+	char comment[80];
+	UBYTE digest[SIZEOF_SHA256SUM];
+	char hex[SIZEOF_SHA256SUM * 2 + 1];
+	char expect[80];
+	BPTR lock;
+	struct FileInfoBlock *fib;
+
+	problems = 0;
+	prot = 0;
+	comment[0] = '\0';
+	lock = 0;
+	fib = NULL;
+
+	lock = Lock((STRPTR)path, SHARED_LOCK);
+	if (lock == 0)
+		return 0;
+
+	fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+	if (fib == NULL)
+		goto done;
+
+	if (!Examine(lock, fib))
+		goto done;
+
+	/* Ignore directories and other non-file entries. */
+	if (fib->fib_DirEntryType > 0)
+		goto done;
+
+	prot = fib->fib_Protection;
+	strncpy(comment, (const char *)fib->fib_Comment, 79);
+	comment[79] = '\0';
+
+	if (!hash_file_sha256(path, digest, NULL))
+		goto done;
+
+	if ((prot & FIBF_WRITE) == 0)
+	{
+		if (report != 0)
+		{
+			FPrintf(report,
+				"WARNING: Index '%s' is not write-protected.\n",
+				(LONG)path);
+		}
+		problems++;
+	}
+
+	digest_to_hex(hex, digest, SIZEOF_SHA256SUM);
+
+	strncpy(expect, INDEX_COMMENT_PREFIX, sizeof(expect) - 1);
+	expect[sizeof(expect) - 1] = '\0';
+	strncat(expect, hex, sizeof(expect) - strlen(expect) - 1);
+
+	if (comment[0] == '\0')
+	{
+		if (report != 0)
+		{
+			FPrintf(report,
+				"WARNING: Index '%s' has no integrity comment.\n"
+				"Run 'CheckSys SCAN' to seal the index.\n",
+				(LONG)path);
+		}
+		problems++;
+	}
+	else if (Stricmp((STRPTR)comment, (STRPTR)expect) != 0)
+	{
+		if (report != 0)
+		{
+			FPrintf(report,
+				"TAMPER: Index '%s' comment does not match file contents.\n",
+				(LONG)path);
+		}
+		problems++;
+	}
+
+done:
+	if (fib != NULL)
+		FreeDosObject(DOS_FIB, fib);
+	if (lock != 0)
+		UnLock(lock);
+
+	return problems;
 }
 
 static void write_index_line(BPTR out, const char *path, const UBYTE digest[SIZEOF_SHA256SUM],
@@ -416,6 +627,19 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 		return FALSE;
 	}
 
+	Close(in);
+	in = 0;
+
+	bad += check_index_seal(indexfile, report_out);
+
+	in = Open((STRPTR)indexfile, MODE_OLDFILE);
+	if (in == 0)
+	{
+		if (report_out != 0)
+			FPrintf(report_out, "Cannot reopen index file '%s'.\n", (LONG)indexfile);
+		return FALSE;
+	}
+
 	if (report_out != 0)
 		FPrintf(report_out, "Checking against %s...\n", (LONG)indexfile);
 
@@ -540,6 +764,7 @@ static void print_usage(void)
 	FPrintf(out, "Defaults: CHECK  ROOT=SYS:  INDEX=%s\n", (LONG)INDEX_FILENAME);
 	FPrintf(out, "SCAN indexes C:, Libs:, S:, Devs:, L:, Expansion/, System/ under ROOT.\n");
 	FPrintf(out, "FULL scans all of ROOT recursively (slow).\n");
+	FPrintf(out, "SCAN seals the index (write-protected + SHA-256 file comment).\n");
 }
 
 int main(int argc, char **argv)
@@ -644,6 +869,14 @@ int main(int argc, char **argv)
 				FPrintf(report, "Building key-system index of %s -> %s\n", (LONG)root, (LONG)indexfile);
 		}
 
+		if (!prepare_index_for_write((const char *)indexfile, report))
+		{
+			CloseLibrary(CRCBase);
+			CRCBase = NULL;
+			FreeArgs(rda);
+			return 20;
+		}
+
 		out = Open(indexfile, MODE_NEWFILE);
 		if (out == 0)
 		{
@@ -674,6 +907,9 @@ int main(int argc, char **argv)
 		}
 
 		Close(out);
+
+		if (!seal_index_file((const char *)indexfile, report))
+			ok = FALSE;
 
 		if (report != 0)
 		{
