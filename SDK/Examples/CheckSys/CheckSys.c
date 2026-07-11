@@ -12,6 +12,8 @@
  * - After SCAN the index is sealed: SHA-256 stored in the file comment via
  *   SetComment(), then write-protected with SetProtection() (see dos.library
  *   autodocs). CHECK warns if the index is writable or the comment mismatches.
+ * - SCAN captures $VER: in the same read pass as hashing and stores it on
+ *   each index line when present.
  */
 
 #include <exec/types.h>
@@ -30,6 +32,7 @@
 #define INDEX_FILENAME "CheckSys.idx"
 #define READ_BUFSIZE   8192
 #define INDEX_COMMENT_PREFIX "CheckSys:"
+#define VER_LINE_MAX   200
 
 #define TEMPLATE "SCAN/S,CHECK/S,FULL/S,ROOT/K,INDEX/K,VERBOSE/S,HELP/S"
 
@@ -129,21 +132,62 @@ static void digest_to_hex(char *out, const UBYTE *data, LONG len)
 	out[len * 2] = '\0';
 }
 
+/*
+ * Split "path [$VER:...]" so CHECK/Open use only the path. Optional $VER:
+ * field begins at the first " $VER:" / "\t$VER:" after the path.
+ */
+static void split_path_and_ver(char *rest, char **path_out, char **ver_out)
+{
+	char *p;
+
+	*path_out = rest;
+	*ver_out = NULL;
+
+	p = rest;
+	while (*p != '\0')
+	{
+		if (p[0] == '$' && p[1] == 'V' && p[2] == 'E' && p[3] == 'R' &&
+		    p[4] == ':')
+		{
+			if (p > rest && (p[-1] == ' ' || p[-1] == '\t'))
+			{
+				p[-1] = '\0';
+				*ver_out = p;
+				return;
+			}
+		}
+		p++;
+	}
+}
+
+/*
+ * Streaming SHA-256. If ver_out is non-NULL, also search the same buffers for
+ * a $VER: tag (overlap window so the tag can sit on a Read boundary).
+ */
 static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
-	ULONG *size_out)
+	ULONG *size_out, char *ver_out, LONG ver_max)
 {
 	BPTR fh;
 	APTR h;
 	UBYTE *buf;
 	LONG r;
+	LONG avail;
 	ULONG total;
+	LONG keep;
+	LONG i;
+	LONG start;
+	LONG vlen;
+	BOOL found_ver;
 
-	/* Streaming SHA-256 via crc.library (CRCNew/CRCUpdate/CRCFinal). */
 	fh = 0;
 	h = NULL;
 	buf = NULL;
 	total = 0;
-	r = 0;
+	keep = 0;
+	found_ver = FALSE;
+
+	if (ver_out != NULL && ver_max > 0)
+		ver_out[0] = '\0';
 
 	fh = Open((STRPTR)path, MODE_OLDFILE);
 	if (fh == 0)
@@ -156,7 +200,7 @@ static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
 		return FALSE;
 	}
 
-	buf = (UBYTE *)AllocVec(READ_BUFSIZE, MEMF_PUBLIC);
+	buf = (UBYTE *)AllocVec(READ_BUFSIZE + 8, MEMF_PUBLIC);
 	if (buf == NULL)
 	{
 		CRCDispose(h);
@@ -166,11 +210,52 @@ static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
 
 	for (;;)
 	{
-		r = Read(fh, buf, READ_BUFSIZE);
-		if (r <= 0)
+		r = Read(fh, buf + keep, READ_BUFSIZE);
+		if (r < 0)
+		{
+			FreeVec(buf);
+			CRCDispose(h);
+			Close(fh);
+			return FALSE;
+		}
+		if (r == 0)
 			break;
+
 		total += (ULONG)r;
-		CRCUpdate(h, buf, r);
+		CRCUpdate(h, buf + keep, r);
+
+		avail = keep + r;
+
+		if (ver_out != NULL && !found_ver)
+		{
+			for (i = 0; i + 5 <= avail; i++)
+			{
+				if (buf[i] == '$' &&
+				    buf[i + 1] == 'V' &&
+				    buf[i + 2] == 'E' &&
+				    buf[i + 3] == 'R' &&
+				    buf[i + 4] == ':')
+				{
+					vlen = 0;
+					start = i;
+					while (start < avail && vlen < ver_max - 1)
+					{
+						if (buf[start] == '\0' || buf[start] == '\n' ||
+						    buf[start] == '\r')
+							break;
+						ver_out[vlen++] = (char)buf[start++];
+					}
+					ver_out[vlen] = '\0';
+					found_ver = TRUE;
+					break;
+				}
+			}
+		}
+
+		keep = 4;
+		if (keep > avail)
+			keep = avail;
+		CopyMem(buf + avail - keep, buf, keep);
 	}
 
 	CRCFinal(h, digest);
@@ -182,8 +267,7 @@ static BOOL hash_file_sha256(const char *path, UBYTE digest[SIZEOF_SHA256SUM],
 	if (size_out != NULL)
 		*size_out = total;
 
-	/* Read() returns -1 on error. */
-	return (BOOL)(r >= 0);
+	return TRUE;
 }
 
 /*
@@ -264,7 +348,7 @@ static BOOL seal_index_file(const char *path, BPTR report)
 
 	prot = 0;
 
-	if (!hash_file_sha256(path, digest, NULL))
+	if (!hash_file_sha256(path, digest, NULL, NULL, 0))
 	{
 		if (report != 0)
 			FPrintf(report, "Cannot hash index file '%s' for sealing.\n", (LONG)path);
@@ -337,7 +421,7 @@ static LONG check_index_seal(const char *path, BPTR report)
 	prot = fib->fib_Protection;
 	Strncpy(comment, (STRPTR)fib->fib_Comment, 80);
 
-	if (!hash_file_sha256(path, digest, NULL))
+	if (!hash_file_sha256(path, digest, NULL, NULL, 0))
 		goto done;
 
 	if ((prot & FIBF_WRITE) == 0)
@@ -388,13 +472,16 @@ done:
 }
 
 static void write_index_line(BPTR out, const char *path, const UBYTE digest[SIZEOF_SHA256SUM],
-	ULONG size)
+	ULONG size, const char *ver)
 {
 	char hex[SIZEOF_SHA256SUM * 2 + 1];
 
 	digest_to_hex(hex, digest, SIZEOF_SHA256SUM);
 
-	FPrintf(out, "sha256 %s %lu %s\n", (LONG)hex, size, (LONG)path);
+	if (ver != NULL && ver[0] != '\0')
+		FPrintf(out, "sha256 %s %lu %s %s\n", (LONG)hex, size, (LONG)path, (LONG)ver);
+	else
+		FPrintf(out, "sha256 %s %lu %s\n", (LONG)hex, size, (LONG)path);
 }
 
 static void write_error_line(BPTR out, const char *path)
@@ -407,14 +494,22 @@ static BOOL index_one_file(const char *path, BPTR index_out, BPTR progress,
 {
 	UBYTE digest[SIZEOF_SHA256SUM];
 	ULONG size;
+	char ver[VER_LINE_MAX];
 
-	if (hash_file_sha256(path, digest, &size))
+	ver[0] = '\0';
+
+	if (hash_file_sha256(path, digest, &size, ver, VER_LINE_MAX))
 	{
-		write_index_line(index_out, path, digest, size);
+		write_index_line(index_out, path, digest, size, ver);
 		if (stats != NULL)
 			stats->files_ok++;
 		if (verbose && progress != 0)
-			FPrintf(progress, "  %s\n", (LONG)path);
+		{
+			if (ver[0] != '\0')
+				FPrintf(progress, "  %s  [%s]\n", (LONG)path, (LONG)ver);
+			else
+				FPrintf(progress, "  %s\n", (LONG)path);
+		}
 		return TRUE;
 	}
 
@@ -751,6 +846,22 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 			continue;
 		}
 
+		{
+			char *verfield;
+
+			verfield = NULL;
+			split_path_and_ver(path, &path, &verfield);
+			(void)verfield;
+		}
+
+		if (*path == '\0')
+		{
+			corrupt++;
+			bad++;
+			report_corrupt_line(report_out, lineno, line_copy);
+			continue;
+		}
+
 		if (Stricmp((STRPTR)t0, (STRPTR)"sha256") != 0)
 		{
 			corrupt++;
@@ -791,7 +902,7 @@ static BOOL check_index(const char *indexfile, BPTR report_out, BOOL verbose,
 		expect_size = (ULONG)size_long;
 
 		total++;
-		if (!hash_file_sha256(path, actual_digest, &actual_size))
+		if (!hash_file_sha256(path, actual_digest, &actual_size, NULL, 0))
 		{
 			file_bad++;
 			bad++;
@@ -988,6 +1099,7 @@ int main(int argc, char **argv)
 		}
 
 		FPrintf(out, "# CheckSys index (algo=sha256)\n");
+		FPrintf(out, "# fields=sha256 hex size path [$VER:]\n");
 		if (full)
 			FPrintf(out, "# mode=full\n");
 		else
